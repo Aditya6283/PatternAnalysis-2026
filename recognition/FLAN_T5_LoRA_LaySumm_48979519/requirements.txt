@@ -1,0 +1,15 @@
+# FLAN-T5 lay summaries - Python dependencies (record the exact versions you used in README Section 3).
+# On Rangpur the 'torch' conda env already has torch, numpy and matplotlib; add the rest with
+#   pip install --no-cache-dir "transformers>=4.44,<5" sentencepiece rouge-score pandas pyarrow scikit-learn pytest
+torch>=2.1
+transformers>=4.44,<5
+tokenizers
+sentencepiece
+huggingface_hub
+rouge-score>=0.1.2
+pandas
+pyarrow
+numpy
+scikit-learn      # TF-IDF retrieval baseline only
+matplotlib
+pytest            # unit tests
