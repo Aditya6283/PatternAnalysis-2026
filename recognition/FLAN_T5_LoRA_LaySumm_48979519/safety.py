@@ -174,10 +174,10 @@ _PSEUDO_NEG = re.compile(  # "no change in the effusion" means the effusion is s
     r"\b(?:hasn|haven|didn|doesn)'?t (?:changed?|improved?|worsened?|grown)\b")
 _POST_NEG = re.compile(
     r"^\W*(?:\w+\W+){0,3}?(?:(?:is|are|was|were|has|have) (?:not|no longer)(?: been)? "
-    r"(?:seen|observed|identified|visible|present|noted|detected|evident|shown|appreciated|found)|"
+    r"(?:seen|observed|identified|visible|visuali[sz]ed|demonstrated|present|noted|detected|evident|shown|appreciated|found)|"
     r"(?:has|have) (?:now )?(?:resolved|disappeared|cleared|gone)|(?:is|are|was|were) (?:now )?(?:resolved|ruled out|excluded|gone|clear)|"
     r"clear(?:ing|ed|s)? up|(?:went|gone|going) away|(?:is|are) no longer (?:seen|there|present|visible)|"
-    r"(?:isn|aren|wasn|weren)'?t (?:seen|there|present|visible)|not (?:seen|observed|identified|visible|present|detected))\b")
+    r"(?:isn|aren|wasn|weren)'?t (?:seen|there|present|visible)|not (?:seen|observed|identified|visible|visuali[sz]ed|demonstrated|present|detected))\b")
 _HEDGE = re.compile(
     r"\b(?:possibl[ey]|probabl[ey]|likely|unlikely|suspect\w*|suggest\w*|may|might|could|"
     r"questionabl[ey]|doubtful|uncertain|indeterminate|equivocal|presum\w*|maybe|perhaps|"

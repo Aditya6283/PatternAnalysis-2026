@@ -195,6 +195,7 @@ def test_dev_split_shares_no_report_text_with_train():
 # ---------------------------------------------------------------------------
 @pytest.mark.parametrize("report,summary,expected", [
     ("No pneumothorax.", "There is no collapsed lung.", set()),
+    ("Pneumothorax is not visualized.", "There is no collapsed lung.", set()),
     ("Cardiomegaly.", "The heart is enlarged.", set()),
     ("No pleural effusion.", "There is fluid around the lungs.", {"polarity_flip"}),
     ("Small left pleural effusion.", "Everything looks normal.", {"omission", "false_reassurance"}),
