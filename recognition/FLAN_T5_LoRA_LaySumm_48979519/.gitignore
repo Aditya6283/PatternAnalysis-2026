@@ -1,0 +1,18 @@
+# Never commit data or model weights (task rule): checkpoints, caches, logs, bulky outputs
+runs/
+logs/
+predictions/
+exported/
+results/generations/
+results/per_example_validation.csv
+results_ablation/generations/
+*.pt
+*.pth
+*.bin
+*.safetensors
+*.parquet
+__pycache__/
+*.pyc
+.pytest_cache/
+.ipynb_checkpoints/
+.DS_Store
