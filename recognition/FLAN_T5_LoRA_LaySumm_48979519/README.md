@@ -2,14 +2,6 @@
 
 **COMP3710 Pattern Analysis 2026, Project 2.6 (Radiology Report Summarisation) · Aditya Raj Singh (48979519)**
 
-<!--
-HOW TO USE THIS TEMPLATE
-- Text outside the TODO comments describes the code and is accurate as written.
-- Every TODO comment needs YOUR numbers or YOUR analysis from your own Rangpur runs.
-  Copy the tables from results/summary.md and results/feasibility.md; read every figure and
-  results/autopsy_candidates.md before writing about them. Delete all TODO comments before submitting.
--->
-
 Radiology reports are written for doctors ("Small left pleural effusion. No pneumothorax."), but
 patients now read them in online portals and are often confused or frightened. This project
 fine-tunes **FLAN-T5-base** [2], an instruction-tuned encoder-decoder Transformer [1, 3], to
@@ -116,11 +108,7 @@ tokens with teacher forcing (verified in `tests/` to equal the decoder's own pro
 ---
 
 ## 2. Feasibility review (midpoint check-off)
-<!-- TODO: this section is your one-page written review (keep it to one page). Fill the numbers
-from results/feasibility.md (sbatch scripts/feasibility.slurm). Write it in your own words;
-the bullets below are the structure and the criteria. -->
 
-**Date presented:** <!-- TODO --> · **Tutor:** <!-- TODO -->
 
 **1. User need, scope and acceptance criteria.** User: a hospital patient-portal team that
 wants draft plain-language versions of chest X-ray reports, *reviewed before release* when

@@ -3,9 +3,7 @@ download.py - Fetch the BioLaySumm data and FLAN-T5 weights once (run on the LOG
 
 Project : Expert-to-layperson translation of radiology reports with FLAN-T5,
           LoRA vs. full fine-tuning (COMP3710 Pattern Analysis, Project 2.6, Hard).
-Author  : Aditya Raj Singh (48979519)
-Note    : Implementation assisted by Claude (Anthropic). See the README section
-          "Artificial Intelligence Usage Disclosure".
+
 
 Rangpur compute nodes may have no internet access, so everything is downloaded here first:
   * the three official splits (pinned commit) -> <data-dir>/{train,validation,test}.parquet

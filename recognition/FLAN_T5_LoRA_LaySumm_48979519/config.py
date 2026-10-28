@@ -3,9 +3,6 @@ config.py - Constants shared by every script (no heavy imports, so download.py s
 
 Project : Expert-to-layperson translation of radiology reports with FLAN-T5,
           LoRA vs. full fine-tuning (COMP3710 Pattern Analysis, Project 2.6, Hard).
-Author  : Aditya Raj Singh (48979519)
-Note    : Implementation assisted by Claude (Anthropic). See the README section
-          "Artificial Intelligence Usage Disclosure".
 """
 
 import os
