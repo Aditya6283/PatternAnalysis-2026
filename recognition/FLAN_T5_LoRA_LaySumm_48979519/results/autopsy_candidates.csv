@@ -1,0 +1,25 @@
+category,uid,flags,mean_logprob,rougeLsum
+Polarity flip (finding present <-> absent),validation-7231,polarity_flip: lung_opacity_infection,-0.07219309359788895,0.7326732673267328
+Polarity flip (finding present <-> absent),validation-8987,polarity_flip: cardiomegaly,-0.07386414706707001,0.9375
+Polarity flip (finding present <-> absent),validation-8811,polarity_flip: nodule_mass,-0.08219209313392639,0.7540983606557377
+Omission of a critical finding,validation-6951,omission: lung_opacity_infection,-0.047092653810977936,0.014035087719298246
+Omission of a critical finding,validation-3129,omission: lung_opacity_infection,-0.07497638463973999,0.017391304347826087
+Omission of a critical finding,validation-6014,"omission: lung_opacity_infection,nodule_mass",-0.08982600271701813,0.11258278145695365
+Hallucinated finding,validation-9913,omission: lung_opacity_infection; hallucination: pulmonary_edema,-0.09469138830900192,0.7360000000000001
+Hallucinated finding,validation-3504,hallucination: cardiomegaly,-0.09660274535417557,0.8037383177570093
+Hallucinated finding,validation-9118,hallucination: cardiomegaly,-0.10302326083183289,0.6991869918699186
+Certainty upgrade (suspected -> definite),validation-240,omission: lung_opacity_infection; certainty_upgrade: pulmonary_edema,-0.1021505668759346,0.8631578947368421
+Certainty upgrade (suspected -> definite),validation-184,certainty_upgrade: lung_opacity_infection,-0.10421009361743927,0.6578947368421052
+Certainty upgrade (suspected -> definite),validation-9006,certainty_upgrade: lung_opacity_infection,-0.11423641443252563,0.8
+Left/right swap,validation-6040,hallucination: pulmonary_edema; laterality_swap: pleural_effusion,-0.1832408607006073,0.5102040816326531
+Left/right swap,validation-3231,laterality_swap: lung_opacity_infection,-0.18485447764396667,0.819672131147541
+Left/right swap,validation-6469,laterality_swap: lung_opacity_infection,-0.1893959939479828,0.7107438016528925
+False reassurance,validation-2532,omission: cardiomegaly; false_reassurance,-0.1394236534833908,0.8529411764705882
+False reassurance,validation-8121,omission: cardiomegaly; false_reassurance,-0.14117851853370667,0.6578947368421053
+False reassurance,validation-5003,omission: pulmonary_edema; false_reassurance,-0.1516524702310562,0.5798816568047338
+Near-copy of the expert report (not lay language),validation-808,,-0.0107443667948246,0.6206896551724138
+Near-copy of the expert report (not lay language),validation-9700,,-0.014053425751626492,0.7107438016528925
+Near-copy of the expert report (not lay language),validation-6670,,-0.015475652180612087,0.72
+Lowest ROUGE-Lsum among long reports,validation-6951,omission: lung_opacity_infection,-0.047092653810977936,0.014035087719298246
+Lowest ROUGE-Lsum among long reports,validation-5952,,-0.04883883148431778,0.324561403508772
+Lowest ROUGE-Lsum among long reports,validation-8942,,-0.05161736160516739,0.4321608040201005

@@ -1,0 +1,452 @@
+{
+  "rouge": {
+    "Copy source": {
+      "rouge1": 0.3643478413101563,
+      "rouge2": 0.13875410166681443,
+      "rougeL": 0.3294942261657956,
+      "rougeLsum": 0.3424056674496279,
+      "rougeLsum_ci95": [
+        0.3397891503936268,
+        0.34528094301870504
+      ],
+      "rougeLsum_seen": 0.3168584851754891,
+      "rougeLsum_unseen": 0.3632657190976305
+    },
+    "Retrieval (nearest train report)": {
+      "rouge1": 0.5840699093749173,
+      "rouge2": 0.36039726730205823,
+      "rougeL": 0.5110257307434196,
+      "rougeLsum": 0.5407431643694844,
+      "rougeLsum_ci95": [
+        0.5364266975969909,
+        0.5452839759375259
+      ],
+      "rougeLsum_seen": 0.5818553426116709,
+      "rougeLsum_unseen": 0.5071738199192343
+    },
+    "Zero-shot FLAN-T5": {
+      "rouge1": 0.30920863432088924,
+      "rouge2": 0.11719769792642981,
+      "rougeL": 0.27803618938242536,
+      "rougeLsum": 0.2894937745065209,
+      "rougeLsum_ci95": [
+        0.28632017501112644,
+        0.2925974660727802
+      ],
+      "rougeLsum_seen": 0.26937448633785754,
+      "rougeLsum_unseen": 0.30592178546349497
+    },
+    "LoRA fine-tuned": {
+      "rouge1": 0.732138065465413,
+      "rouge2": 0.5472101353465805,
+      "rougeL": 0.6820429305053642,
+      "rougeLsum": 0.7021695851752423,
+      "rougeLsum_ci95": [
+        0.6986191994129365,
+        0.7057339242490368
+      ],
+      "rougeLsum_seen": 0.7407767174840313,
+      "rougeLsum_unseen": 0.6706456869503548
+    },
+    "Full fine-tuned": {
+      "rouge1": 0.7485168479763499,
+      "rouge2": 0.5741874083334607,
+      "rougeL": 0.7014312989495287,
+      "rougeLsum": 0.7200680922950531,
+      "rougeLsum_ci95": [
+        0.7166777593553334,
+        0.723451318648105
+      ],
+      "rougeLsum_seen": 0.7542468161192457,
+      "rougeLsum_unseen": 0.6921601243405124
+    }
+  },
+  "paired_bootstrap": {
+    "LoRA fine-tuned - Full fine-tuned (all)": [
+      -0.01789850711981066,
+      -0.019719184678187254,
+      -0.01592988994135789,
+      1.0
+    ],
+    "LoRA fine-tuned - Full fine-tuned (unseen)": [
+      -0.021514437390157733,
+      -0.02372016344417171,
+      -0.0191957642082538,
+      1.0
+    ],
+    "LoRA fine-tuned - Zero-shot FLAN-T5 (all)": [
+      0.41267581066872133,
+      0.40851040180438675,
+      0.41692904063208935,
+      0.0
+    ],
+    "LoRA fine-tuned - Zero-shot FLAN-T5 (unseen)": [
+      0.36472390148685974,
+      0.35991566865162944,
+      0.36963751195294525,
+      0.0
+    ],
+    "Full fine-tuned - Zero-shot FLAN-T5 (all)": [
+      0.43057431778853206,
+      0.4260960462692054,
+      0.434995147507925,
+      0.0
+    ],
+    "Full fine-tuned - Zero-shot FLAN-T5 (unseen)": [
+      0.3862383388770175,
+      0.3812220950351969,
+      0.3913345823847349,
+      0.0
+    ],
+    "LoRA fine-tuned - Retrieval (nearest train report) (all)": [
+      0.16142642080575784,
+      0.156653101040591,
+      0.16642358849655176,
+      0.0
+    ],
+    "LoRA fine-tuned - Retrieval (nearest train report) (unseen)": [
+      0.16347186703112046,
+      0.15842077950017167,
+      0.16849918557631005,
+      0.0
+    ]
+  },
+  "readability": {
+    "Copy source": {
+      "grade_mean": 13.702000942496463,
+      "grade_median": 12.712553130929793,
+      "grade_le_8": 0.0805,
+      "jargon_rate": 0.13101837655088813,
+      "words": 23.1212,
+      "empty": 0.0,
+      "near_copy": 1.0
+    },
+    "Retrieval (nearest train report)": {
+      "grade_mean": 7.4559329783156905,
+      "grade_median": 7.041639344262297,
+      "grade_le_8": 0.6317,
+      "jargon_rate": 0.0020770614228877186,
+      "words": 36.2932,
+      "empty": 0.0,
+      "near_copy": 0.0019
+    },
+    "Zero-shot FLAN-T5": {
+      "grade_mean": 13.682636642615094,
+      "grade_median": 12.713235294117649,
+      "grade_le_8": 0.11364355808800253,
+      "jargon_rate": 0.11183966201329086,
+      "words": 19.1732,
+      "empty": 0.0522,
+      "near_copy": 0.6469
+    },
+    "LoRA fine-tuned": {
+      "grade_mean": 6.700761818144901,
+      "grade_median": 6.338478260869568,
+      "grade_le_8": 0.7031,
+      "jargon_rate": 0.0005335206753905811,
+      "words": 35.9044,
+      "empty": 0.0,
+      "near_copy": 0.0029
+    },
+    "Full fine-tuned": {
+      "grade_mean": 6.677063520606895,
+      "grade_median": 6.366388888888888,
+      "grade_le_8": 0.7,
+      "jargon_rate": 0.00048425414656929266,
+      "words": 36.7727,
+      "empty": 0.0,
+      "near_copy": 0.0019
+    },
+    "Human reference": {
+      "grade_mean": 6.979005473282988,
+      "grade_median": 6.664722891566267,
+      "grade_le_8": 0.6751675167516752,
+      "jargon_rate": 0.0009320775893162799,
+      "words": 38.7141,
+      "empty": 0.0,
+      "near_copy": 0.0021
+    },
+    "Expert report (input)": {
+      "grade_mean": 13.702000942496463,
+      "grade_median": 12.712553130929793,
+      "grade_le_8": 0.0805,
+      "jargon_rate": 0.13101837655088813,
+      "words": 23.1212,
+      "empty": 0.0,
+      "near_copy": 1.0
+    }
+  },
+  "safety_unseen_validation": {
+    "Copy source": {
+      "any_flag": 0.0,
+      "omission": 0.0,
+      "hallucination": 0.0,
+      "polarity_flip": 0.0,
+      "certainty_upgrade": 0.0,
+      "certainty_downgrade": 0.0,
+      "laterality_swap": 0.0,
+      "false_reassurance": 0.0
+    },
+    "Retrieval (nearest train report)": {
+      "any_flag": 0.38782924613987285,
+      "omission": 0.2657584014532243,
+      "hallucination": 0.088283378746594,
+      "polarity_flip": 0.05449591280653951,
+      "certainty_upgrade": 0.011989100817438692,
+      "certainty_downgrade": 0.013623978201634877,
+      "laterality_swap": 0.005812897366030881,
+      "false_reassurance": 0.012170753860127156
+    },
+    "Zero-shot FLAN-T5": {
+      "any_flag": 0.15876475930971845,
+      "omission": 0.14405086285195276,
+      "hallucination": 0.007629427792915531,
+      "polarity_flip": 0.014532243415077202,
+      "certainty_upgrade": 0.0021798365122615805,
+      "certainty_downgrade": 0.0,
+      "laterality_swap": 0.00018165304268846503,
+      "false_reassurance": 0.0025431425976385103
+    },
+    "LoRA fine-tuned": {
+      "any_flag": 0.19146230699364214,
+      "omission": 0.11353315168029064,
+      "hallucination": 0.043778383287920074,
+      "polarity_flip": 0.02488646684831971,
+      "certainty_upgrade": 0.015258855585831062,
+      "certainty_downgrade": 0.009627611262488647,
+      "laterality_swap": 0.0007266121707538601,
+      "false_reassurance": 0.0014532243415077202
+    },
+    "Full fine-tuned": {
+      "any_flag": 0.20072661217075385,
+      "omission": 0.11734786557674841,
+      "hallucination": 0.04504995458673933,
+      "polarity_flip": 0.0296094459582198,
+      "certainty_upgrade": 0.013260672116257947,
+      "certainty_downgrade": 0.009445958219800182,
+      "laterality_swap": 0.0016348773841961854,
+      "false_reassurance": 0.0021798365122615805
+    },
+    "Human reference": {
+      "any_flag": 0.22216167120799274,
+      "omission": 0.1293369663941871,
+      "hallucination": 0.05794732061762035,
+      "polarity_flip": 0.032152588555858314,
+      "certainty_upgrade": 0.013079019073569483,
+      "certainty_downgrade": 0.010899182561307902,
+      "laterality_swap": 0.0012715712988192551,
+      "false_reassurance": 0.0021798365122615805
+    }
+  },
+  "safety_test": {
+    "Copy source": {
+      "any_flag": 0.0,
+      "omission": 0.0,
+      "hallucination": 0.0,
+      "polarity_flip": 0.0,
+      "certainty_upgrade": 0.0,
+      "certainty_downgrade": 0.0,
+      "laterality_swap": 0.0,
+      "false_reassurance": 0.0
+    },
+    "Retrieval (nearest train report)": {
+      "any_flag": 0.3875,
+      "omission": 0.2705,
+      "hallucination": 0.0905,
+      "polarity_flip": 0.0555,
+      "certainty_upgrade": 0.0135,
+      "certainty_downgrade": 0.009,
+      "laterality_swap": 0.005,
+      "false_reassurance": 0.0125
+    },
+    "Zero-shot FLAN-T5": {
+      "any_flag": 0.155,
+      "omission": 0.139,
+      "hallucination": 0.0055,
+      "polarity_flip": 0.0155,
+      "certainty_upgrade": 0.0025,
+      "certainty_downgrade": 0.0005,
+      "laterality_swap": 0.0,
+      "false_reassurance": 0.002
+    },
+    "LoRA fine-tuned": {
+      "any_flag": 0.195,
+      "omission": 0.117,
+      "hallucination": 0.047,
+      "polarity_flip": 0.029,
+      "certainty_upgrade": 0.016,
+      "certainty_downgrade": 0.0065,
+      "laterality_swap": 0.0005,
+      "false_reassurance": 0.002
+    },
+    "Full fine-tuned": {
+      "any_flag": 0.201,
+      "omission": 0.1225,
+      "hallucination": 0.0445,
+      "polarity_flip": 0.0325,
+      "certainty_upgrade": 0.01,
+      "certainty_downgrade": 0.008,
+      "laterality_swap": 0.0005,
+      "false_reassurance": 0.0035
+    }
+  },
+  "confidence_auroc": {
+    "Zero-shot FLAN-T5": {
+      "reference_disagreement": 0.5058816254104342,
+      "checker_flag": 0.715409179151223
+    },
+    "LoRA fine-tuned": {
+      "reference_disagreement": 0.6026623549080504,
+      "checker_flag": 0.6133712029174903
+    },
+    "Full fine-tuned": {
+      "reference_disagreement": 0.5891705315101671,
+      "checker_flag": 0.5985247536231884
+    }
+  },
+  "guardrails": {
+    "Zero-shot FLAN-T5": {
+      "No guardrail": {
+        "auto_approved": 1.0,
+        "errors_caught": 0.0,
+        "residual_error": 0.2124
+      },
+      "Confidence filter (90% coverage)": {
+        "auto_approved": 0.9001,
+        "errors_caught": 0.19868173258003766,
+        "residual_error": 0.18909010109987778
+      },
+      "Confidence filter (80% coverage)": {
+        "auto_approved": 0.8009,
+        "errors_caught": 0.2688323917137476,
+        "residual_error": 0.1939068547883631
+      },
+      "Entity check (no safety flag)": {
+        "auto_approved": 0.8897,
+        "errors_caught": 0.461864406779661,
+        "residual_error": 0.12847027087782398
+      },
+      "Entity check + confidence (top 90%)": {
+        "auto_approved": 0.8317,
+        "errors_caught": 0.4821092278719397,
+        "residual_error": 0.13225922808705062
+      }
+    },
+    "LoRA fine-tuned": {
+      "No guardrail": {
+        "auto_approved": 1.0,
+        "errors_caught": 0.0,
+        "residual_error": 0.1319
+      },
+      "Confidence filter (90% coverage)": {
+        "auto_approved": 0.912,
+        "errors_caught": 0.0932524639878696,
+        "residual_error": 0.13114035087719297
+      },
+      "Confidence filter (80% coverage)": {
+        "auto_approved": 0.8,
+        "errors_caught": 0.2623199393479909,
+        "residual_error": 0.121625
+      },
+      "Entity check (no safety flag)": {
+        "auto_approved": 0.8685,
+        "errors_caught": 0.49052312357846856,
+        "residual_error": 0.0773747841105354
+      },
+      "Entity check + confidence (top 90%)": {
+        "auto_approved": 0.792,
+        "errors_caught": 0.5360121304018196,
+        "residual_error": 0.07727272727272727
+      }
+    },
+    "Full fine-tuned": {
+      "No guardrail": {
+        "auto_approved": 1.0,
+        "errors_caught": 0.0,
+        "residual_error": 0.1238
+      },
+      "Confidence filter (90% coverage)": {
+        "auto_approved": 0.9,
+        "errors_caught": 0.08481421647819062,
+        "residual_error": 0.12588888888888888
+      },
+      "Confidence filter (80% coverage)": {
+        "auto_approved": 0.8,
+        "errors_caught": 0.2455573505654281,
+        "residual_error": 0.11675
+      },
+      "Entity check (no safety flag)": {
+        "auto_approved": 0.8625,
+        "errors_caught": 0.5105008077544426,
+        "residual_error": 0.07026086956521739
+      },
+      "Entity check + confidence (top 90%)": {
+        "auto_approved": 0.7731,
+        "errors_caught": 0.5492730210016155,
+        "residual_error": 0.07217694994179279
+      }
+    }
+  },
+  "resources": {
+    "Zero-shot FLAN-T5": {
+      "train": {
+        "parameters_total": null,
+        "parameters_trainable": null,
+        "train_time_min": null,
+        "peak_train_vram_mb": null,
+        "train_tokens_per_s": null,
+        "checkpoint_mb": null,
+        "best_epoch": null,
+        "epochs_run": null
+      },
+      "inference": {
+        "ms_per_report_batched": 73.67065818107221,
+        "generated_tokens_per_s": 649.2153888790451,
+        "peak_inference_vram_mb": 2792.03271484375,
+        "latency_ms_single_report": 1276.8070716410875,
+        "parameters_total": 247577856,
+        "parameters_trainable": 0
+      }
+    },
+    "LoRA fine-tuned": {
+      "train": {
+        "parameters_total": 249347328,
+        "parameters_trainable": 1769472,
+        "train_time_min": 36.19,
+        "peak_train_vram_mb": 13589.3,
+        "train_tokens_per_s": 22645.33243994654,
+        "checkpoint_mb": 6.8,
+        "best_epoch": 3.0,
+        "epochs_run": 3.0
+      },
+      "inference": {
+        "ms_per_report_batched": 62.1904195722891,
+        "generated_tokens_per_s": 857.4346196204195,
+        "peak_inference_vram_mb": 2802.03271484375,
+        "latency_ms_single_report": 1552.9735647141933,
+        "parameters_total": 249347328,
+        "parameters_trainable": 1769472
+      }
+    },
+    "Full fine-tuned": {
+      "train": {
+        "parameters_total": 247577856,
+        "parameters_trainable": 247577856,
+        "train_time_min": 40.59,
+        "peak_train_vram_mb": 17251.6,
+        "train_tokens_per_s": 23800.07874525321,
+        "checkpoint_mb": 1132.77,
+        "best_epoch": 3.0,
+        "epochs_run": 3.0
+      },
+      "inference": {
+        "ms_per_report_batched": 50.57532251885277,
+        "generated_tokens_per_s": 1069.7997769531041,
+        "peak_inference_vram_mb": 3100.68896484375,
+        "latency_ms_single_report": 1229.6466981060803,
+        "parameters_total": 247577856,
+        "parameters_trainable": 247577856
+      }
+    }
+  }
+}
