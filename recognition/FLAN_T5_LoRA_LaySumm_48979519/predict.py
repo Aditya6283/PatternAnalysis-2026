@@ -13,7 +13,8 @@ What it does
        summary, its confidence (mean token log-probability), the automatic safety flags
        (omission / hallucination / polarity flip / certainty change / false reassurance) and the
        Flesch-Kincaid grade; plus ROUGE when references exist;
-    4. writes predictions/predictions.csv and a readable predictions/examples.md;
+    4. writes predictions/predictions.csv, a readable predictions/examples.md and a figure,
+       predictions/examples.png (each report next to its summary; red box = safety flag);
     5. with --export-merged DIR, folds the LoRA adapters into the weights and saves a plain
        Hugging Face model that anyone can load with AutoModelForSeq2SeqLM (deployment).
 
@@ -26,14 +27,16 @@ Usage
 
 import argparse
 import os
+import textwrap
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
 from dataset import DEFAULT_DATA_DIR, DEFAULT_MODEL, load_tokenizer, prepare_splits
 from modules import LaySummariser, load_summariser
 from safety import compare, fkgl
-from utils import Timer, get_device, rouge_per_example, set_seed, write_csv
+from utils import Timer, get_device, rouge_per_example, save_figure, set_seed, write_csv
 
 
 def parse_args():
@@ -54,6 +57,41 @@ def parse_args():
     p.add_argument("--export-merged", default=None, help="save LoRA-merged Hugging Face model here")
     p.add_argument("--device", default="auto", choices=["auto", "cpu"])
     return p.parse_args()
+
+
+def describe_flags(raised: dict) -> str:
+    """{'omission': ['pleural_effusion'], ...} -> 'omission: pleural_effusion' (or 'none')."""
+    if not raised:
+        return "none"
+    return "; ".join(k if v is True else f"{k}: {', '.join(v)}" for k, v in raised.items())
+
+
+def _wrap(text: str, width: int = 62, max_lines: int = 9) -> str:
+    lines = textwrap.wrap(str(text), width) or [""]
+    text = "\n".join(lines[:max_lines]) + (" ..." if len(lines) > max_lines else "")
+    return text.replace("$", r"\$")  # a stray '$' would switch matplotlib into maths mode
+
+
+def plot_examples(records, path: str, title: str, max_examples: int = 6) -> None:
+    """One row per report: the expert report on the left, the generated lay summary on the
+    right (green box = no safety flag, red box = the checker raised one), with confidence,
+    reading grade and the flags underneath the summary."""
+    rows = records[:max_examples]
+    fig, axes = plt.subplots(len(rows), 2, figsize=(13, 1.7 * len(rows)), squeeze=False)
+    for (ax_report, ax_summary), rec in zip(axes, rows):
+        flagged = rec["safety_flags"] != "none"
+        ax_report.text(0, 1, _wrap(rec["report"]), va="top", ha="left", fontsize=8,
+                       bbox=dict(boxstyle="round", facecolor="#eeeeee", edgecolor="none"))
+        meta = (f"confidence {rec['mean_logprob']:.2f} | grade {rec['grade_level']} | "
+                f"flags: {rec['safety_flags']}")
+        ax_summary.text(0, 1, _wrap(rec["summary"]) + "\n\n" + _wrap(meta, max_lines=3), va="top", ha="left",
+                        fontsize=8, bbox=dict(boxstyle="round", edgecolor="none",
+                                              facecolor="#f8d7da" if flagged else "#d4edda"))
+        ax_report.axis("off")
+        ax_summary.axis("off")
+    axes[0][0].set_title("Expert report (input)", loc="left", fontsize=10)
+    axes[0][1].set_title("Generated lay summary (output)", loc="left", fontsize=10)
+    save_figure(fig, path, title)
 
 
 def main():
@@ -106,7 +144,7 @@ def main():
         raised = {k: v for k, v in flags.items() if k != "any" and v}
         rec = {"uid": row.uid, "report": row.radiology_report, "reference": row.layman_report,
                "summary": out["summary"], "mean_logprob": round(out["mean_logprob"], 4),
-               "grade_level": round(fkgl(out["summary"]), 1), "safety_flags": raised or "none"}
+               "grade_level": round(fkgl(out["summary"]), 1), "safety_flags": describe_flags(raised)}
         if scores is not None:
             rec.update({k: round(float(scores[k][i]), 4) for k in ("rouge1", "rouge2", "rougeLsum")})
         records.append(rec)
@@ -116,21 +154,23 @@ def main():
             print(f"REFERENCE : {row.layman_report}")
         print(f"SUMMARY   : {out['summary']}")
         print(f"confidence (mean log-prob) {out['mean_logprob']:.3f} | grade level {rec['grade_level']} | "
-              f"safety flags: {raised or 'none'}"
+              f"safety flags: {rec['safety_flags']}"
               + (f" | ROUGE-1 {rec['rouge1']:.3f} ROUGE-Lsum {rec['rougeLsum']:.3f}" if scores is not None else ""))
         md += [f"## {i + 1}. {row.uid}", f"**Report:** {row.radiology_report}", ""]
         if row.layman_report:
             md += [f"**Human lay reference:** {row.layman_report}", ""]
         md += [f"**Model summary:** {out['summary']}", "",
                f"Confidence {out['mean_logprob']:.3f} · grade level {rec['grade_level']} · "
-               f"safety flags: {raised or 'none'}", ""]
+               f"safety flags: {rec['safety_flags']}", ""]
     if scores is not None:
         print("\nMean ROUGE over these examples: " +
               ", ".join(f"{k} {np.mean(v):.4f}" for k, v in scores.items()))
     write_csv(records, os.path.join(args.out, "predictions.csv"))
     with open(os.path.join(args.out, "examples.md"), "w") as f:
         f.write("\n".join(md) + "\n")
-    print(f"\nSaved {os.path.join(args.out, 'predictions.csv')} and {os.path.join(args.out, 'examples.md')}")
+    plot_examples(records, os.path.join(args.out, "examples.png"), f"Example lay summaries: {name}")
+    print(f"\nSaved {os.path.join(args.out, 'predictions.csv')}, {os.path.join(args.out, 'examples.md')} "
+          f"and {os.path.join(args.out, 'examples.png')}")
 
 
 if __name__ == "__main__":

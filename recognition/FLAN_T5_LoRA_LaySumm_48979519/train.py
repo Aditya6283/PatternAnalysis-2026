@@ -17,10 +17,13 @@ What happens:
   * every --eval-every optimiser steps: dev loss (all dev rows) and dev ROUGE (greedy decoding
     on --dev-rouge-samples rows); the checkpoint with the lowest dev loss is kept and training
     stops early after --patience evaluations without improvement;
+  * testing: the best checkpoint is reloaded and summarises --test-samples random reports from
+    the held-out official validation split (ROUGE, all and unseen reports);
   * outputs in --out: best.pt (LoRA: adapters only, ~7 MB; full: all weights, ~1 GB),
     steps.csv (loss every --log-every steps), evals.csv, curves.png, summary.json
-    (parameters, trainable parameters, peak VRAM, time, throughput, best dev metrics).
-The official validation split is never used here; evaluate.py uses it once at the end.
+    (parameters, trainable parameters, peak VRAM, time, throughput, best dev and test metrics).
+The official validation split is never used for training or model selection (that is the dev
+split's job); the test step only reports on it, and evaluate.py runs the full benchmark.
 """
 
 import argparse
@@ -75,6 +78,8 @@ def parse_args():
     p.add_argument("--dev-rouge-samples", type=int, default=300, help="dev rows decoded for ROUGE at each evaluation")
     p.add_argument("--gen-max-new-tokens", type=int, default=320)
     p.add_argument("--patience", type=int, default=4, help="evaluations without dev-loss improvement before stopping")
+    p.add_argument("--test-samples", type=int, default=500,
+                   help="held-out validation reports summarised by the best checkpoint at the end (0 = skip)")
     p.add_argument("--log-every", type=int, default=50)
     p.add_argument("--max-minutes", type=float, default=0, help="stop cleanly after this many minutes (0 = no limit)")
     # misc
@@ -149,6 +154,27 @@ def evaluate_dev(model: LaySummariser, dev_loader, dev_df, tokenizer, device, ar
         scores = rouge_per_example([o["summary"] for o in outs], sub["layman_report"].tolist())
         metrics.update({f"dev_{k}": float(v.mean()) for k, v in scores.items()})
     model.train()
+    return metrics
+
+
+@torch.no_grad()
+def test_best_checkpoint(model: LaySummariser, path: str, held_out, tokenizer, device, args, amp: bool):
+    """Reload the best checkpoint and score it on a random sample of the held-out validation split.
+
+    The weights in memory are from the last step, which is not always the best one, so the
+    saved checkpoint is loaded back first. This also proves the checkpoint can be reloaded.
+    """
+    ckpt = torch.load(path, map_location="cpu", weights_only=False)
+    model.load_trainable_state_dict(ckpt["state_dict"])
+    sample = held_out.sample(n=min(args.test_samples, len(held_out)), random_state=args.seed)
+    outs = model.summarise(sample["radiology_report"].tolist(), tokenizer, device, batch_size=64,
+                           max_source_len=args.max_source_len,
+                           max_new_tokens=args.gen_max_new_tokens, amp=amp)
+    scores = rouge_per_example([o["summary"] for o in outs], sample["layman_report"].tolist())
+    unseen = ~sample["seen_in_train"].to_numpy()
+    metrics = {"test_rows": len(sample), **{f"test_{k}": float(v.mean()) for k, v in scores.items()}}
+    if unseen.any():
+        metrics["test_rougeLsum_unseen"] = float(scores["rougeLsum"][unseen].mean())
     return metrics
 
 
@@ -310,7 +336,14 @@ def main():
         plot_training(step_log, eval_log, os.path.join(args.out, "curves.png"),
                       f"{os.path.basename(args.model)} {'LoRA' if args.mode == 'lora' else 'full'} "
                       f"fine-tuning (best dev loss at step {best_step})")
-        ckpt_mb = os.path.getsize(os.path.join(args.out, "best.pt")) / 2 ** 20 if best_step else float("nan")
+        best_path = os.path.join(args.out, "best.pt")
+        ckpt_mb = os.path.getsize(best_path) / 2 ** 20 if best_step else float("nan")
+        test_metrics = {}
+        if best_step and args.test_samples > 0:
+            test_metrics = test_best_checkpoint(model, best_path, splits["validation"], tokenizer, device, args, amp)
+            print(f"[test] best checkpoint (step {best_step}) on {test_metrics['test_rows']} held-out validation "
+                  "reports: " + " ".join(f"{k[5:]} {v:.4f}" for k, v in test_metrics.items() if k != "test_rows"),
+                  flush=True)
         tok_rates = [r["tokens_per_s"] for r in step_log[1:]] or [r["tokens_per_s"] for r in step_log]
         summary = {"mode": args.mode, "model": args.model, "parameters_total": total_params,
                    "parameters_trainable": trainable_params,
@@ -318,7 +351,7 @@ def main():
                    "train_rows": len(train_ds), "dev_rows": len(dev_ds), "world_size": world,
                    "steps_run": global_step, "steps_planned": total_steps, "steps_per_epoch": steps_per_epoch,
                    "epochs_run": round(global_step / steps_per_epoch, 3), "best_step": best_step,
-                   "best_epoch": best_metrics.get("epoch"), "best_dev": best_metrics,
+                   "best_epoch": best_metrics.get("epoch"), "best_dev": best_metrics, "test": test_metrics,
                    "train_time_min": round(total_time / 60, 2),
                    "train_tokens_per_s": sum(tok_rates) / len(tok_rates) if tok_rates else None,
                    "peak_train_vram_mb": round(peak_memory_mb(device), 1),

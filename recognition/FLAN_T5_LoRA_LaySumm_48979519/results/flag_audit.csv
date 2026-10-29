@@ -1,0 +1,21 @@
+uid,lora_flags,verdict,note
+validation-2509,polarity_flip: lung_opacity_infection,false alarm,Summary correctly says there is no pneumonia; the clause 'which is a type of lung infection' is outside the negation's scope.
+validation-720,"polarity_flip: lung_opacity_infection,pulmonary_edema",false alarm,Faithful. 'No significant changes or infiltrates' is read like 'no change in the infiltrates' (pseudo-negation rule).
+validation-6276,polarity_flip: nodule_mass,false alarm,"Faithful. The negation scope stops at 'caused by', so 'the spread of cancer' looks affirmed."
+validation-5862,polarity_flip: lung_opacity_infection,false alarm,'Signs of a past infection' (granulomatous sequelae) is matched as an active infection.
+validation-3316,omission: lung_opacity_infection,false alarm,Faithful lay paraphrase ('a widespread pattern that suggests scarring'); not in the lexicon.
+validation-2771,omission: pleural_effusion,false alarm,The effusion is described as 'a small amount of fluid in the lower chest area' (not in the lexicon). Separate unflagged problem: the hiatal hernia becomes 'fat through the esophagus'.
+validation-6062,omission: lung_opacity_infection,vague,Infiltrates become 'lung issues'; a NEW left effusion is described as 'more fluid on the left side'.
+validation-5115,omission: lung_opacity_infection,false alarm,"Faithful, but 'lymphangitis' is left unexplained (readability)."
+validation-5160,omission: lung_opacity_infection,genuine error,Interstitial infiltrates become 'fluid in the air sacs'; 'no kinking in the esophagus' becomes 'not bending in the stomach'.
+validation-3748,hallucination: pneumothorax,genuine error,"Retrocardiac atelectasis (a partly collapsed segment) becomes 'a collapsed lung', which overstates it."
+validation-4482,omission: lung_opacity_infection; hallucination: pulmonary_edema,genuine error,An interstitial-alveolar pattern becomes 'fluid in the lungs' (adds an oedema reading); date 11 03 2014 given as November 3.
+validation-5276,omission: lung_opacity_infection,vague,'Infiltrate' becomes 'lung issue'.
+validation-294,polarity_flip: pulmonary_edema,false alarm,Correct ('has cleared up'); the checker does not treat 'resolution of' as a negation. Unflagged error: date 6 5 2010 given as June 5.
+validation-7012,omission: lung_opacity_infection,vague,The infiltrate is not named ('the left lower lung area has improved').
+validation-6511,hallucination: lung_opacity_infection,false alarm,"'Opacification' is not in the lexicon, so 'cloudiness' looks invented. Unflagged error: 'fatty deposits in the lungs' (the fat is at the cardiophrenic angle, outside the lung)."
+validation-2379,polarity_flip: lung_opacity_infection; certainty_upgrade: pulmonary_edema,false alarm,"Both hedges are kept ('don't rule out', 'might be due to'); the clause break at 'due to' cut the hedge."
+validation-3440,omission: lung_opacity_infection,false alarm,"Consolidation becomes 'lung thickening', the human writers' usual phrase; not in the lexicon."
+validation-6871,omission: lung_opacity_infection,vague,Says the lower lungs 'improved' without saying what (infiltrates).
+validation-8513,omission: lung_opacity_infection,vague,'Infiltrate' becomes 'lung issue'.
+validation-5892,omission: lung_opacity_infection,vague,Infiltrates become 'fluid' (the same habit as the human references).

@@ -94,14 +94,15 @@ class Timer:
 
 def library_versions() -> Dict[str, str]:
     """Versions for the README's reproducibility table."""
+    from importlib.metadata import PackageNotFoundError, version
     out = {"python": platform.python_version(), "torch": torch.__version__,
            "cuda": str(torch.version.cuda), "numpy": np.__version__}
-    for name in ("transformers", "tokenizers", "rouge_score", "pandas", "pyarrow", "sklearn",
-                 "matplotlib", "huggingface_hub"):
+    # Ask pip's metadata rather than the modules: rouge-score and sentencepiece have no __version__
+    for name in ("transformers", "tokenizers", "sentencepiece", "rouge-score", "pandas", "pyarrow",
+                 "scikit-learn", "matplotlib", "huggingface-hub", "pytest"):
         try:
-            module = __import__(name)
-            out[name] = getattr(module, "__version__", "installed")
-        except ImportError:
+            out[name] = version(name)
+        except PackageNotFoundError:
             out[name] = "not installed"
     if torch.cuda.is_available():
         out["gpu"] = torch.cuda.get_device_name(0)

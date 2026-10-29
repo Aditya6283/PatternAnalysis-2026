@@ -183,10 +183,14 @@ _HEDGE = re.compile(
     r"questionabl[ey]|doubtful|uncertain|indeterminate|equivocal|presum\w*|maybe|perhaps|"
     r"compatible with|cannot be (?:ruled out|excluded)|can'?t be (?:ruled out|excluded)|"
     r"not (?:be )?(?:ruled out|excluded)|differential|versus|vs)\b")
+# 'cannot exclude pneumonia', "can't rule out a pneumothorax": the finding is possible, not absent
+_HEDGED_EXCLUSION = re.compile(
+    r"\b(?:cannot|can ?not|can'?t|unable to|could not|couldn'?t|(?:does|do|did) not|(?:doesn|don|didn)'?t)"
+    r" (?:\w+ )?(?:exclude|rule out|discard)\b")
 _POST_HEDGE = re.compile(  # 'an effusion is likely', 'pneumonia cannot be excluded'
     r"^\W*(?:\w+\W+){0,3}?(?:cannot be (?:ruled out|excluded)|can'?t be (?:ruled out|excluded)|"
     r"(?:is|are|was|were) (?:suspected|possible|likely|probable|questionable|not excluded|uncertain|"
-    r"doubtful|not ruled out))\b")
+    r"doubtful|not ruled out)|not (?:ruled out|excluded))\b")
 # Words that end the scope of a negation / hedge cue inside a sentence
 _TERMINATOR = re.compile(r"(?:;|:|\bbut\b|\bhowever\b|\balthough\b|\bthough\b|\bexcept\b|\bwhereas\b|"
                          r"\bwhile\b|, with\b|\band (?:a|an|the|there|is|are|has|have|shows?)\b|"
@@ -257,7 +261,7 @@ def _negated_before(scope: str) -> bool:
     if not cues:
         return False
     last = cues[-1]
-    for p in _PSEUDO_NEG.finditer(scope):
+    for p in list(_PSEUDO_NEG.finditer(scope)) + list(_HEDGED_EXCLUSION.finditer(scope)):
         if p.start() <= last.start() < p.end():
             return False
     return not any(a.start() >= last.end() for a in _NEW_ALTERNATIVE.finditer(scope))
@@ -286,7 +290,8 @@ def find_mentions(text: str) -> List[Mention]:
                 before = _scope_before(sentence, m.start())
                 after = _scope_after(sentence, m.end())
                 negated = _negated_before(before) or bool(_POST_NEG.search(after))
-                hedged = bool(_HEDGE.search(before)) or bool(_POST_HEDGE.search(after))
+                hedged = (bool(_HEDGE.search(before)) or bool(_HEDGED_EXCLUSION.search(before))
+                          or bool(_POST_HEDGE.search(after)))
                 out.append(Mention(concept, m.group(0), negated, hedged, _sides(before, m.group(0), after)))
     return out
 
