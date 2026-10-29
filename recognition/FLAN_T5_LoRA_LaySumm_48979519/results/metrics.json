@@ -188,12 +188,12 @@
       "false_reassurance": 0.0
     },
     "Retrieval (nearest train report)": {
-      "any_flag": 0.38782924613987285,
+      "any_flag": 0.38837420526793826,
       "omission": 0.2657584014532243,
       "hallucination": 0.088283378746594,
-      "polarity_flip": 0.05449591280653951,
+      "polarity_flip": 0.055222524977293366,
       "certainty_upgrade": 0.011989100817438692,
-      "certainty_downgrade": 0.013623978201634877,
+      "certainty_downgrade": 0.013805631244323342,
       "laterality_swap": 0.005812897366030881,
       "false_reassurance": 0.012170753860127156
     },
@@ -201,39 +201,39 @@
       "any_flag": 0.15876475930971845,
       "omission": 0.14405086285195276,
       "hallucination": 0.007629427792915531,
-      "polarity_flip": 0.014532243415077202,
+      "polarity_flip": 0.014350590372388738,
       "certainty_upgrade": 0.0021798365122615805,
       "certainty_downgrade": 0.0,
       "laterality_swap": 0.00018165304268846503,
       "false_reassurance": 0.0025431425976385103
     },
     "LoRA fine-tuned": {
-      "any_flag": 0.19146230699364214,
+      "any_flag": 0.192188919164396,
       "omission": 0.11353315168029064,
       "hallucination": 0.043778383287920074,
-      "polarity_flip": 0.02488646684831971,
-      "certainty_upgrade": 0.015258855585831062,
+      "polarity_flip": 0.025431425976385105,
+      "certainty_upgrade": 0.015440508628519528,
       "certainty_downgrade": 0.009627611262488647,
       "laterality_swap": 0.0007266121707538601,
       "false_reassurance": 0.0014532243415077202
     },
     "Full fine-tuned": {
-      "any_flag": 0.20072661217075385,
+      "any_flag": 0.20127157129881926,
       "omission": 0.11734786557674841,
-      "hallucination": 0.04504995458673933,
-      "polarity_flip": 0.0296094459582198,
-      "certainty_upgrade": 0.013260672116257947,
-      "certainty_downgrade": 0.009445958219800182,
+      "hallucination": 0.045231607629427795,
+      "polarity_flip": 0.029791099000908264,
+      "certainty_upgrade": 0.013442325158946413,
+      "certainty_downgrade": 0.009264305177111716,
       "laterality_swap": 0.0016348773841961854,
       "false_reassurance": 0.0021798365122615805
     },
     "Human reference": {
-      "any_flag": 0.22216167120799274,
+      "any_flag": 0.22252497729336967,
       "omission": 0.1293369663941871,
       "hallucination": 0.05794732061762035,
-      "polarity_flip": 0.032152588555858314,
+      "polarity_flip": 0.03251589464123524,
       "certainty_upgrade": 0.013079019073569483,
-      "certainty_downgrade": 0.010899182561307902,
+      "certainty_downgrade": 0.010717529518619437,
       "laterality_swap": 0.0012715712988192551,
       "false_reassurance": 0.0021798365122615805
     }
@@ -250,58 +250,58 @@
       "false_reassurance": 0.0
     },
     "Retrieval (nearest train report)": {
-      "any_flag": 0.3875,
-      "omission": 0.2705,
+      "any_flag": 0.3885,
+      "omission": 0.271,
       "hallucination": 0.0905,
       "polarity_flip": 0.0555,
-      "certainty_upgrade": 0.0135,
+      "certainty_upgrade": 0.014,
       "certainty_downgrade": 0.009,
       "laterality_swap": 0.005,
       "false_reassurance": 0.0125
     },
     "Zero-shot FLAN-T5": {
       "any_flag": 0.155,
-      "omission": 0.139,
+      "omission": 0.1395,
       "hallucination": 0.0055,
       "polarity_flip": 0.0155,
-      "certainty_upgrade": 0.0025,
+      "certainty_upgrade": 0.003,
       "certainty_downgrade": 0.0005,
       "laterality_swap": 0.0,
       "false_reassurance": 0.002
     },
     "LoRA fine-tuned": {
-      "any_flag": 0.195,
-      "omission": 0.117,
+      "any_flag": 0.196,
+      "omission": 0.1175,
       "hallucination": 0.047,
-      "polarity_flip": 0.029,
-      "certainty_upgrade": 0.016,
+      "polarity_flip": 0.0285,
+      "certainty_upgrade": 0.0165,
       "certainty_downgrade": 0.0065,
       "laterality_swap": 0.0005,
       "false_reassurance": 0.002
     },
     "Full fine-tuned": {
-      "any_flag": 0.201,
-      "omission": 0.1225,
-      "hallucination": 0.0445,
+      "any_flag": 0.2025,
+      "omission": 0.123,
+      "hallucination": 0.045,
       "polarity_flip": 0.0325,
-      "certainty_upgrade": 0.01,
+      "certainty_upgrade": 0.0105,
       "certainty_downgrade": 0.008,
       "laterality_swap": 0.0005,
-      "false_reassurance": 0.0035
+      "false_reassurance": 0.004
     }
   },
   "confidence_auroc": {
     "Zero-shot FLAN-T5": {
-      "reference_disagreement": 0.5058816254104342,
+      "reference_disagreement": 0.5062586771389795,
       "checker_flag": 0.715409179151223
     },
     "LoRA fine-tuned": {
-      "reference_disagreement": 0.6026623549080504,
-      "checker_flag": 0.6133712029174903
+      "reference_disagreement": 0.6027725709480823,
+      "checker_flag": 0.6135441801695144
     },
     "Full fine-tuned": {
-      "reference_disagreement": 0.5891705315101671,
-      "checker_flag": 0.5985247536231884
+      "reference_disagreement": 0.5890765341557469,
+      "checker_flag": 0.5986982307650702
     }
   },
   "guardrails": {
@@ -309,27 +309,27 @@
       "No guardrail": {
         "auto_approved": 1.0,
         "errors_caught": 0.0,
-        "residual_error": 0.2124
+        "residual_error": 0.2127
       },
       "Confidence filter (90% coverage)": {
         "auto_approved": 0.9001,
-        "errors_caught": 0.19868173258003766,
-        "residual_error": 0.18909010109987778
+        "errors_caught": 0.19840150446638458,
+        "residual_error": 0.18942339740028885
       },
       "Confidence filter (80% coverage)": {
         "auto_approved": 0.8009,
-        "errors_caught": 0.2688323917137476,
-        "residual_error": 0.1939068547883631
+        "errors_caught": 0.2684532204983545,
+        "residual_error": 0.19428143338743914
       },
       "Entity check (no safety flag)": {
         "auto_approved": 0.8897,
-        "errors_caught": 0.461864406779661,
-        "residual_error": 0.12847027087782398
+        "errors_caught": 0.461212976022567,
+        "residual_error": 0.12880746318983927
       },
       "Entity check + confidence (top 90%)": {
         "auto_approved": 0.8317,
-        "errors_caught": 0.4821092278719397,
-        "residual_error": 0.13225922808705062
+        "errors_caught": 0.48142924306535023,
+        "residual_error": 0.13261993507274258
       }
     },
     "LoRA fine-tuned": {
@@ -349,41 +349,41 @@
         "residual_error": 0.121625
       },
       "Entity check (no safety flag)": {
-        "auto_approved": 0.8685,
+        "auto_approved": 0.8681,
         "errors_caught": 0.49052312357846856,
-        "residual_error": 0.0773747841105354
+        "residual_error": 0.07741043658564681
       },
       "Entity check + confidence (top 90%)": {
-        "auto_approved": 0.792,
+        "auto_approved": 0.7916,
         "errors_caught": 0.5360121304018196,
-        "residual_error": 0.07727272727272727
+        "residual_error": 0.07731177362304194
       }
     },
     "Full fine-tuned": {
       "No guardrail": {
         "auto_approved": 1.0,
         "errors_caught": 0.0,
-        "residual_error": 0.1238
+        "residual_error": 0.1239
       },
       "Confidence filter (90% coverage)": {
         "auto_approved": 0.9,
-        "errors_caught": 0.08481421647819062,
-        "residual_error": 0.12588888888888888
+        "errors_caught": 0.0847457627118644,
+        "residual_error": 0.126
       },
       "Confidence filter (80% coverage)": {
         "auto_approved": 0.8,
-        "errors_caught": 0.2455573505654281,
-        "residual_error": 0.11675
+        "errors_caught": 0.2453591606133979,
+        "residual_error": 0.116875
       },
       "Entity check (no safety flag)": {
-        "auto_approved": 0.8625,
-        "errors_caught": 0.5105008077544426,
-        "residual_error": 0.07026086956521739
+        "auto_approved": 0.8621,
+        "errors_caught": 0.510088781275222,
+        "residual_error": 0.07040946525925067
       },
       "Entity check + confidence (top 90%)": {
-        "auto_approved": 0.7731,
-        "errors_caught": 0.5492730210016155,
-        "residual_error": 0.07217694994179279
+        "auto_approved": 0.7727,
+        "errors_caught": 0.5488297013720742,
+        "residual_error": 0.07234372977869807
       }
     }
   },
@@ -400,10 +400,10 @@
         "epochs_run": null
       },
       "inference": {
-        "ms_per_report_batched": 73.67065818107221,
-        "generated_tokens_per_s": 649.2153888790451,
+        "ms_per_report_batched": 75.28774523962056,
+        "generated_tokens_per_s": 635.2710503917469,
         "peak_inference_vram_mb": 2792.03271484375,
-        "latency_ms_single_report": 1276.8070716410875,
+        "latency_ms_single_report": 1252.0876238122582,
         "parameters_total": 247577856,
         "parameters_trainable": 0
       }
@@ -420,10 +420,10 @@
         "epochs_run": 3.0
       },
       "inference": {
-        "ms_per_report_batched": 62.1904195722891,
-        "generated_tokens_per_s": 857.4346196204195,
+        "ms_per_report_batched": 63.02494657211355,
+        "generated_tokens_per_s": 846.0811416791299,
         "peak_inference_vram_mb": 2802.03271484375,
-        "latency_ms_single_report": 1552.9735647141933,
+        "latency_ms_single_report": 1571.2066604755819,
         "parameters_total": 249347328,
         "parameters_trainable": 1769472
       }
@@ -440,10 +440,10 @@
         "epochs_run": 3.0
       },
       "inference": {
-        "ms_per_report_batched": 50.57532251885277,
-        "generated_tokens_per_s": 1069.7997769531041,
-        "peak_inference_vram_mb": 3100.68896484375,
-        "latency_ms_single_report": 1229.6466981060803,
+        "ms_per_report_batched": 50.748533260048134,
+        "generated_tokens_per_s": 1066.148423891388,
+        "peak_inference_vram_mb": 3098.31396484375,
+        "latency_ms_single_report": 1239.7480779327452,
         "parameters_total": 247577856,
         "parameters_trainable": 247577856
       }

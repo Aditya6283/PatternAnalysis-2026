@@ -5,22 +5,24 @@ Project : Expert-to-layperson translation of radiology reports with FLAN-T5,
           LoRA vs. full fine-tuning (COMP3710 Pattern Analysis, Project 2.6, Hard).
 
 Data: BioLaySumm 2025, Subtask 2.1 LaymanRRG, open-source track [1]: chest X-ray reports
-(PadChest, BIMCV-COVID19, Open-i) paired with a plain-language rewrite. Columns:
-source, images_path, radiology_report, layman_report. Official splits: train (~150k),
-validation (~10k), test (~10.5k, *no* lay references published). `download.py` stores
-them as parquet files in DEFAULT_DATA_DIR.
+(PadChest, BIMCV-COVID19, Open-i) paired with a plain-language rewrite that GPT-4o wrote [2]
+(silver labels, not clinician-written). Columns: source, images_path, radiology_report,
+layman_report. Official splits: train (~150k), validation (~10k), test (~10.5k, *no* lay
+references published). `download.py` stores them as parquet files in DEFAULT_DATA_DIR.
 
 How the splits are used (no patient ids are provided, so identical report TEXT is the
-unit of leakage):
+unit of leakage, and the X-ray study from images_path is checked as well):
     train       official train, exact duplicate (report, lay) pairs removed;
     dev         ~1,000 rows carved out of train for early stopping / model selection,
                 grouped by normalised report text so no report string is in both;
     validation  official validation, held out and used ONCE for the final benchmark
                 (the task sheet evaluates on it because test labels are hidden). Each row
                 is marked `seen_in_train` if its normalised report text also occurs in the
-                training split (45% of them do), so results can be split seen vs. unseen;
-    test        official test, unlabelled; its reports never occur in train, so it is
-                used for the reference-free clinical-safety audit on genuinely new reports.
+                training split (45% of them do) and `study_seen_in_train` if its X-ray study
+                does (39%), so results can be split seen vs. unseen vs. new in both;
+    test        official test, unlabelled; its report texts almost never occur in train
+                (0.4%, though 26% of its rows share an X-ray study with train), so it is used
+                for the reference-free clinical-safety audit on new reports.
 
 Run `python dataset.py --audit` for the data audit used in the feasibility review.
 
@@ -28,6 +30,8 @@ References:
     [1] C. Xiao et al. Overview of the BioLaySumm 2025 Shared Task on Lay Summarization of
         Biomedical Research Articles and Radiology Reports. BioNLP @ ACL 2025.
         Data: https://huggingface.co/datasets/BioLaySumm/BioLaySumm2025-LaymanRRG-opensource-track
+    [2] K. Zhao et al. X-ray Made Simple: Lay Radiology Report Generation and Robust Evaluation.
+        arXiv:2406.17911 (the LaymanRRG framework; GPT-4o translates the reports).
 """
 
 import argparse
@@ -74,6 +78,19 @@ def normalise_report(text: str) -> str:
     """Key used to detect the same report written twice: lower case, no punctuation,
     single spaces. 'No significant findings.' == 'no significant findings'."""
     return " ".join(_PUNCT_RE.sub(" ", str(text).lower()).split())
+
+
+def study_key(df: pd.DataFrame) -> pd.Series:
+    """Which X-ray examination each row comes from, read from `images_path` (there are no patient ids).
+
+    PadChest image names start with the examination's identifier ('<study>_<image>.png'; images of
+    one examination share it and carry the same or a near-identical report), BIMCV rows give the
+    session id ('ses-E12345') and Open-i rows list the study's images. Rows with the same key come
+    from one examination even when their report texts differ, which text matching cannot see.
+    """
+    paths = df["images_path"].astype(str)
+    keys = df["source"].astype(str) + ":" + paths
+    return keys.where(df["source"] != "PadChest", "PadChest:" + paths.str.split("_").str[0])
 
 
 # ---------------------------------------------------------------------------
@@ -124,15 +141,19 @@ def prepare_splits(data_dir: str = DEFAULT_DATA_DIR, dev_size: int = 1000, seed:
     train_keys = set(train["radiology_report"].map(normalise_report))
     dev_keys = set(dev["radiology_report"].map(normalise_report))
     assert not (train_keys & dev_keys), "a report text appears in both train and dev"
+    train_studies = set(study_key(train))
     for df in (validation, test):
         df["seen_in_train"] = df["radiology_report"].map(normalise_report).isin(train_keys)
+        # A stricter test than the text: the same examination may appear with differently worded reports
+        df["study_seen_in_train"] = study_key(df).isin(train_studies)
     test["has_reference"] = test["layman_report"].str.len() > 0
     if verbose:
         print(f"[data] train {n_raw} rows -> {n_dedup} after removing duplicate pairs -> "
               f"{len(train)} train + {len(dev)} dev (grouped by report text)", flush=True)
         print(f"[data] validation {len(validation)} rows ({validation['seen_in_train'].mean():.1%} "
-              f"of reports also in train); test {len(test)} rows "
-              f"({test['seen_in_train'].mean():.1%} in train, "
+              f"of reports and {validation['study_seen_in_train'].mean():.1%} of X-ray studies also in train); "
+              f"test {len(test)} rows ({test['seen_in_train'].mean():.1%} / "
+              f"{test['study_seen_in_train'].mean():.1%} in train, "
               f"{test['has_reference'].mean():.0%} with references)", flush=True)
     return {"train": train, "dev": dev, "validation": validation, "test": test}
 
@@ -326,6 +347,7 @@ def audit_text(data_dir: str = DEFAULT_DATA_DIR, tokenizer=None, sample: int = 2
                      f"{_pct(lw) if has_ref else 'n/a'} |")
     tr = raw["train"]
     keys_tr = set(tr["radiology_report"].map(normalise_report))
+    studies_tr = set(study_key(tr))
     n_pairs = len(tr.drop_duplicates(list(TEXT_COLUMNS)))
     lines += ["",
               f"- Distinct report texts in train: {tr['radiology_report'].nunique():,} of {len(tr):,} rows; "
@@ -334,7 +356,10 @@ def audit_text(data_dir: str = DEFAULT_DATA_DIR, tokenizer=None, sample: int = 2
               f"({tr['radiology_report'].value_counts().iloc[0]:,} rows).",
               f"- Validation reports whose normalised text also occurs in train: "
               f"{raw['validation']['radiology_report'].map(normalise_report).isin(keys_tr).mean():.1%}; "
-              f"test: {raw['test']['radiology_report'].map(normalise_report).isin(keys_tr).mean():.1%}."]
+              f"test: {raw['test']['radiology_report'].map(normalise_report).isin(keys_tr).mean():.1%}.",
+              f"- Rows whose X-ray study (from images_path) also occurs in train: validation "
+              f"{study_key(raw['validation']).isin(studies_tr).mean():.1%}; "
+              f"test: {study_key(raw['test']).isin(studies_tr).mean():.1%}."]
     if tokenizer is not None:
         smp = tr.sample(min(sample, len(tr)), random_state=seed)
         src_len = [len(x) for x in tokenizer([format_prompt(r) for r in smp["radiology_report"]])["input_ids"]]

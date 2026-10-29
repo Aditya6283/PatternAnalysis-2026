@@ -9,7 +9,7 @@ What it does
        untrained FLAN-T5 with --zeroshot;
     2. summarises reports: --n random reports from the held-out validation split (default),
        your own text with --text "...", or one report per line from --input file.txt;
-    3. prints, for every report: the source, the human reference (if any), the generated lay
+    3. prints, for every report: the source, the reference summary (if any), the generated lay
        summary, its confidence (mean token log-probability), the automatic safety flags
        (omission / hallucination / polarity flip / certainty change / false reassurance) and the
        Flesch-Kincaid grade; plus ROUGE when references exist;
@@ -158,7 +158,7 @@ def main():
               + (f" | ROUGE-1 {rec['rouge1']:.3f} ROUGE-Lsum {rec['rougeLsum']:.3f}" if scores is not None else ""))
         md += [f"## {i + 1}. {row.uid}", f"**Report:** {row.radiology_report}", ""]
         if row.layman_report:
-            md += [f"**Human lay reference:** {row.layman_report}", ""]
+            md += [f"**Reference summary (GPT-4o):** {row.layman_report}", ""]
         md += [f"**Model summary:** {out['summary']}", "",
                f"Confidence {out['mean_logprob']:.3f} · grade level {rec['grade_level']} · "
                f"safety flags: {rec['safety_flags']}", ""]

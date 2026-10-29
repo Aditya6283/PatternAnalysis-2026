@@ -11,7 +11,7 @@ error types into measurable flags.
 
 How (a NegEx-style rule system [1], kept deliberately simple and transparent):
   1. A small lexicon maps the critical chest X-ray findings to BOTH expert terms
-     ("pleural effusion") and the lay phrasings the human lay writers actually use
+     ("pleural effusion") and the lay phrasings the reference summaries actually use
      ("fluid around the lungs"; collected from the training references). Ambiguous lay
      phrases (e.g. "collapsed lung", "shadow") are ignored in sentences that point to a
      different meaning ("...collapsed lung, called atelectasis", "the heart's shadow").
@@ -29,11 +29,11 @@ How (a NegEx-style rule system [1], kept deliberately simple and transparent):
         false reassurance  the summary says the whole study is normal although the
                            report affirms a critical finding
   Rule systems make mistakes, so evaluate.py first measures how often the checker fires
-  on the HUMAN-written references (its false-alarm floor) before using it on model output.
+  on the dataset's reference summaries (its false-alarm floor) before using it on model output.
 
 Readability: Flesch-Kincaid grade level [2] (patient material targets about grade 6-8) and
 a data-driven jargon rate (share of words that are typical of the expert reports but
-avoided by the human lay writers).
+avoided in the reference lay summaries).
 
 References:
     [1] W. W. Chapman et al. A Simple Algorithm for Identifying Negated Findings and Diseases
@@ -367,7 +367,7 @@ def disagrees(text_a: str, text_b: str, concepts: Sequence[str] = CRITICAL) -> b
 
     Absent and negated count as the same ('not present'): 'no effusion' vs. silence is
     fine, but 'effusion' vs. silence or vs. 'no effusion' is a disagreement. Used to label
-    model summaries against the human reference (an offline audit label).
+    model summaries against the reference summary (an offline audit label).
     """
     a, b = finding_set(text_a, concepts), finding_set(text_b, concepts)
     return any((a.get(c) == "pos") != (b.get(c) == "pos") for c in concepts)
@@ -407,7 +407,7 @@ def fkgl(text: str) -> float:
 
 def build_jargon_vocabulary(expert_texts: Iterable[str], lay_texts: Iterable[str],
                             top_k: int = 300, min_count: int = 20) -> Set[str]:
-    """Words much more frequent in expert reports than in the human lay rewrites.
+    """Words much more frequent in expert reports than in the reference lay summaries.
 
     Ranked by the smoothed log-odds ratio log((e + 1) / (E + V)) - log((l + 1) / (L + V)),
     keeping the `top_k` most expert-specific words (length >= 4) seen at least `min_count`

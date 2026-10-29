@@ -56,11 +56,11 @@ Share of summaries with at least one flag on a critical finding (pneumothorax, p
 | Text | Any flag | Omission | Hallucination | Polarity flip | Certainty upgrade | Certainty downgrade | Left/right swap | False reassurance | Any flag (test) |
 |---|---|---|---|---|---|---|---|---|---|
 | Copy source | 0.0% | 0.0% | 0.0% | 0.0% | 0.0% | 0.0% | 0.0% | 0.0% | 0.0% |
-| Retrieval (nearest train report) | 38.8% | 26.6% | 8.8% | 5.4% | 1.2% | 1.4% | 0.6% | 1.2% | 38.8% |
-| Zero-shot FLAN-T5 | 15.9% | 14.4% | 0.8% | 1.5% | 0.2% | 0.0% | 0.0% | 0.3% | 15.5% |
-| LoRA fine-tuned | 19.1% | 11.4% | 4.4% | 2.5% | 1.5% | 1.0% | 0.1% | 0.1% | 19.5% |
-| Full fine-tuned | 20.1% | 11.7% | 4.5% | 3.0% | 1.3% | 0.9% | 0.2% | 0.2% | 20.1% |
-| Human reference | 22.2% | 12.9% | 5.8% | 3.2% | 1.3% | 1.1% | 0.1% | 0.2% | n/a |
+| Retrieval (nearest train report) | 38.8% | 26.6% | 8.8% | 5.5% | 1.2% | 1.4% | 0.6% | 1.2% | 38.9% |
+| Zero-shot FLAN-T5 | 15.9% | 14.4% | 0.8% | 1.4% | 0.2% | 0.0% | 0.0% | 0.3% | 15.5% |
+| LoRA fine-tuned | 19.2% | 11.4% | 4.4% | 2.5% | 1.5% | 1.0% | 0.1% | 0.1% | 19.6% |
+| Full fine-tuned | 20.1% | 11.7% | 4.5% | 3.0% | 1.3% | 0.9% | 0.2% | 0.2% | 20.2% |
+| Human reference | 22.3% | 12.9% | 5.8% | 3.3% | 1.3% | 1.1% | 0.1% | 0.2% | n/a |
 
 ## 4. Confidence and guardrails (validation)
 
@@ -68,22 +68,22 @@ Error label (offline audit): the summary disagrees with the human reference on w
 
 | System | Policy | Auto-approved | Errors caught | Residual error |
 |---|---|---|---|---|
-| Zero-shot FLAN-T5 | No guardrail | 100.0% | 0.0% | 21.2% |
-| Zero-shot FLAN-T5 | Confidence filter (90% coverage) | 90.0% | 19.9% | 18.9% |
-| Zero-shot FLAN-T5 | Confidence filter (80% coverage) | 80.1% | 26.9% | 19.4% |
-| Zero-shot FLAN-T5 | Entity check (no safety flag) | 89.0% | 46.2% | 12.8% |
-| Zero-shot FLAN-T5 | Entity check + confidence (top 90%) | 83.2% | 48.2% | 13.2% |
+| Zero-shot FLAN-T5 | No guardrail | 100.0% | 0.0% | 21.3% |
+| Zero-shot FLAN-T5 | Confidence filter (90% coverage) | 90.0% | 19.8% | 18.9% |
+| Zero-shot FLAN-T5 | Confidence filter (80% coverage) | 80.1% | 26.8% | 19.4% |
+| Zero-shot FLAN-T5 | Entity check (no safety flag) | 89.0% | 46.1% | 12.9% |
+| Zero-shot FLAN-T5 | Entity check + confidence (top 90%) | 83.2% | 48.1% | 13.3% |
 | Zero-shot FLAN-T5 | AUROC of low confidence for errors | 0.506 |  | (for checker flags: 0.715) |
 | LoRA fine-tuned | No guardrail | 100.0% | 0.0% | 13.2% |
 | LoRA fine-tuned | Confidence filter (90% coverage) | 91.2% | 9.3% | 13.1% |
 | LoRA fine-tuned | Confidence filter (80% coverage) | 80.0% | 26.2% | 12.2% |
-| LoRA fine-tuned | Entity check (no safety flag) | 86.9% | 49.1% | 7.7% |
+| LoRA fine-tuned | Entity check (no safety flag) | 86.8% | 49.1% | 7.7% |
 | LoRA fine-tuned | Entity check + confidence (top 90%) | 79.2% | 53.6% | 7.7% |
-| LoRA fine-tuned | AUROC of low confidence for errors | 0.603 |  | (for checker flags: 0.613) |
+| LoRA fine-tuned | AUROC of low confidence for errors | 0.603 |  | (for checker flags: 0.614) |
 | Full fine-tuned | No guardrail | 100.0% | 0.0% | 12.4% |
 | Full fine-tuned | Confidence filter (90% coverage) | 90.0% | 8.5% | 12.6% |
-| Full fine-tuned | Confidence filter (80% coverage) | 80.0% | 24.6% | 11.7% |
-| Full fine-tuned | Entity check (no safety flag) | 86.2% | 51.1% | 7.0% |
+| Full fine-tuned | Confidence filter (80% coverage) | 80.0% | 24.5% | 11.7% |
+| Full fine-tuned | Entity check (no safety flag) | 86.2% | 51.0% | 7.0% |
 | Full fine-tuned | Entity check + confidence (top 90%) | 77.3% | 54.9% | 7.2% |
 | Full fine-tuned | AUROC of low confidence for errors | 0.589 |  | (for checker flags: 0.599) |
 
@@ -93,6 +93,6 @@ Inference uses greedy decoding; batched = batches of 64 reports sorted by length
 
 | System | Parameters | Trainable | Train time (min) | Peak train VRAM (MB) | Train tokens/s | Checkpoint (MB) | ms/report (batched) | ms/report (single) | Generated tokens/s | Peak inference VRAM (MB) |
 |---|---|---|---|---|---|---|---|---|---|---|
-| Zero-shot FLAN-T5 | 247,577,856 | 0 (no training) | - | - | - | - | 73.7 | 1277 | 649 | 2792 |
-| LoRA fine-tuned | 249,347,328 | 1,769,472 | 36.2 | 13589 | 22645 | 6.8 | 62.2 | 1553 | 857 | 2802 |
-| Full fine-tuned | 247,577,856 | 247,577,856 | 40.6 | 17252 | 23800 | 1132.8 | 50.6 | 1230 | 1070 | 3101 |
+| Zero-shot FLAN-T5 | 247,577,856 | 0 (no training) | - | - | - | - | 75.3 | 1252 | 635 | 2792 |
+| LoRA fine-tuned | 249,347,328 | 1,769,472 | 36.2 | 13589 | 22645 | 6.8 | 63.0 | 1571 | 846 | 2802 |
+| Full fine-tuned | 247,577,856 | 247,577,856 | 40.6 | 17252 | 23800 | 1132.8 | 50.7 | 1240 | 1066 | 3098 |

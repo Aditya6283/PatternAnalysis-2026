@@ -15,7 +15,7 @@ validation-294,polarity_flip: pulmonary_edema,false alarm,Correct ('has cleared 
 validation-7012,omission: lung_opacity_infection,vague,The infiltrate is not named ('the left lower lung area has improved').
 validation-6511,hallucination: lung_opacity_infection,false alarm,"'Opacification' is not in the lexicon, so 'cloudiness' looks invented. Unflagged error: 'fatty deposits in the lungs' (the fat is at the cardiophrenic angle, outside the lung)."
 validation-2379,polarity_flip: lung_opacity_infection; certainty_upgrade: pulmonary_edema,false alarm,"Both hedges are kept ('don't rule out', 'might be due to'); the clause break at 'due to' cut the hedge."
-validation-3440,omission: lung_opacity_infection,false alarm,"Consolidation becomes 'lung thickening', the human writers' usual phrase; not in the lexicon."
+validation-3440,omission: lung_opacity_infection,false alarm,"Consolidation becomes 'lung thickening', the reference summaries' usual phrase; not in the lexicon."
 validation-6871,omission: lung_opacity_infection,vague,Says the lower lungs 'improved' without saying what (infiltrates).
 validation-8513,omission: lung_opacity_infection,vague,'Infiltrate' becomes 'lung issue'.
-validation-5892,omission: lung_opacity_infection,vague,Infiltrates become 'fluid' (the same habit as the human references).
+validation-5892,omission: lung_opacity_infection,vague,Infiltrates become 'fluid' (the same habit as the reference summaries).

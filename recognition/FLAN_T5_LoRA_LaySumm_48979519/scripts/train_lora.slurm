@@ -19,8 +19,9 @@
 
 set -eo pipefail
 cd "${SLURM_SUBMIT_DIR}"
-source "$HOME/miniconda3/bin/activate"
-conda activate torch
+# Name the env here: with no argument, `source` would hand this job's own arguments
+# (e.g. --lora-r 32) to conda's activate script, which then fails.
+source "$HOME/miniconda3/bin/activate" torch
 export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 TOKENIZERS_PARALLELISM=false
 echo "Job $SLURM_JOB_ID on $(hostname) at $(date)"
 nvidia-smi --query-gpu=name,memory.total --format=csv,noheader

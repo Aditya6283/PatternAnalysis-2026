@@ -7,26 +7,29 @@ Project : Expert-to-layperson translation of radiology reports with FLAN-T5,
 Compares, on exactly the same held-out reports:
     Copy source        output the expert report unchanged (what ROUGE gives for zero effort)
     Retrieval          lay summary of the most similar TRAINING report (TF-IDF cosine; exploits
-                       the duplicated reports; fluent and human-written, but about another patient)
+                       the duplicated reports; fluent and well written, but about another patient)
     Zero-shot FLAN-T5  the pre-trained model with the same prompt (the task's baseline)
     LoRA fine-tuned    runs/lora/best.pt
     Full fine-tuned    runs/full/best.pt
 and writes the tables / figures for README Section 7:
   1. ROUGE-1/2/L/Lsum on the official validation split (bootstrap 95% CI), split into reports
-     whose text also occurs in training ("seen", 45%) vs. new reports ("unseen"), and by source;
-     paired bootstrap tests between systems.
+     whose text also occurs in training ("seen", 45%) vs. new reports ("unseen"), plus the
+     "clean" reports that are new in text AND come from an X-ray study never seen in training,
+     and by source; paired bootstrap tests between systems.
   2. Readability: Flesch-Kincaid grade, jargon rate, length, empty outputs, near-copies.
   3. Clinical-safety audit (safety.py) against the SOURCE report: omissions, hallucinations,
      polarity flips, certainty changes, false reassurance - on unseen validation reports and on
-     the official test reports (all new, no references needed). The human references get the
-     same audit: their flag rate is the checker's false-alarm floor.
+     the official test reports (new report text, no references needed). The dataset's reference
+     summaries (written by GPT-4o) get the same audit: their flag rate is the checker's
+     false-alarm floor.
   4. Guardrails: does the model's confidence (mean token log-probability) predict errors?
-     Errors are labelled offline by disagreement with the human reference on any critical
+     Errors are labelled offline by disagreement with the reference summary on any critical
      finding; deployable guardrails (confidence filter, entity check, both) are scored by
      coverage (share auto-approved), errors caught and residual error rate.
   5. Resource profile: parameters, trainable parameters, training time / VRAM (from
      runs/*/summary.json), inference latency, throughput and VRAM, checkpoint size.
-  6. Autopsy candidates: real failure cases per error type -> results/autopsy_candidates.md.
+  6. Autopsy candidates: real failure cases per error type, from the unseen validation reports
+     and from the official test reports -> results/autopsy_candidates.md.
 
 Generated summaries are cached in results/generations/ (use --regenerate to redo them).
 
@@ -53,6 +56,10 @@ from safety import (CRITICAL, FLAG_TYPES, build_jargon_vocabulary, compare, disa
 from utils import (ROUGE_TYPES, Timer, auroc, bar_chart, bootstrap_ci, get_device, load_json,
                    md_table, paired_bootstrap_diff, peak_memory_mb, reset_peak_memory,
                    rouge_per_example, save_figure, save_json, set_seed, write_csv)
+
+# The dataset's lay summaries were written by GPT-4o (the LaymanRRG framework), not by people:
+# a useful reference, but silver labels rather than ground truth.
+REFERENCE = "Reference (GPT-4o)"
 
 
 def parse_args():
@@ -103,8 +110,8 @@ def pct(x, nd=1):
 def retrieval_baseline(train: pd.DataFrame, queries, batch: int = 256):
     """Lay summary of the most similar training report (TF-IDF, cosine similarity).
 
-    Identical reports map to their most common lay version, so 'seen' reports get a
-    human-written summary of the same text; new reports get the summary of a DIFFERENT
+    Identical reports map to their most common lay version, so 'seen' reports get the
+    reference summary of the same text; new reports get the summary of a DIFFERENT
     patient's report, which can read perfectly and still be clinically wrong.
     """
     from sklearn.feature_extraction.text import TfidfVectorizer
@@ -220,10 +227,14 @@ def main():
     test = test.sample(n=min(args.test_limit, len(test)), random_state=0).reset_index(drop=True) \
         if args.test_limit else test.iloc[:0]
     jargon = build_jargon_vocabulary(train["radiology_report"], train["layman_report"])
+    n_clean = int((~val["seen_in_train"] & ~val["study_seen_in_train"]).sum())
     report.append(f"# Evaluation summary\n\nHeld-out official validation split: {len(val):,} reports "
                   f"({val['seen_in_train'].mean():.1%} also occur verbatim in the training split; "
-                  f"{(~val['seen_in_train']).sum():,} unseen). Reference-free safety audit on {len(test):,} "
-                  f"official test reports ({test['seen_in_train'].mean():.1%} seen in training).")
+                  f"{(~val['seen_in_train']).sum():,} unseen; {val['study_seen_in_train'].mean():.1%} share an "
+                  f"X-ray study with a training row; {n_clean:,} are new in both). Reference-free safety audit on "
+                  f"{len(test):,} official test reports ({test['seen_in_train'].mean():.1%} of report texts and "
+                  f"{test['study_seen_in_train'].mean():.1%} of X-ray studies seen in training). The reference "
+                  "summaries were written by GPT-4o (LaymanRRG), so they are silver labels.")
 
     # ---- systems ----------------------------------------------------------------------------
     systems = OrderedDict()
@@ -296,6 +307,8 @@ def main():
     names = list(systems)
     refs, srcs = val["layman_report"].tolist(), val["radiology_report"].tolist()
     seen = val["seen_in_train"].to_numpy()
+    # 'clean' = new report text AND an X-ray study that never appears in training (dataset.study_key)
+    clean = ~seen & ~val["study_seen_in_train"].to_numpy()
 
     # ---- 1. ROUGE -----------------------------------------------------------------------------
     rouge = {n: rouge_per_example(outputs[n]["validation"]["summary"].astype(str).tolist(), refs) for n in names}
@@ -305,15 +318,18 @@ def main():
         lo, hi = bootstrap_ci(r["rougeLsum"])
         rows.append([n] + [fmt(r[k].mean()) for k in ROUGE_TYPES] + [f"[{lo:.3f}, {hi:.3f}]",
                     fmt(r["rougeLsum"][seen].mean()) if seen.any() else "n/a",
-                    fmt(r["rougeLsum"][~seen].mean()) if (~seen).any() else "n/a"])
+                    fmt(r["rougeLsum"][~seen].mean()) if (~seen).any() else "n/a",
+                    fmt(r["rougeLsum"][clean].mean()) if clean.any() else "n/a"])
         metrics.setdefault("rouge", {})[n] = {**{k: float(r[k].mean()) for k in ROUGE_TYPES},
                                               "rougeLsum_ci95": [lo, hi],
                                               "rougeLsum_seen": float(r["rougeLsum"][seen].mean()) if seen.any() else None,
-                                              "rougeLsum_unseen": float(r["rougeLsum"][~seen].mean()) if (~seen).any() else None}
+                                              "rougeLsum_unseen": float(r["rougeLsum"][~seen].mean()) if (~seen).any() else None,
+                                              "rougeLsum_clean": float(r["rougeLsum"][clean].mean()) if clean.any() else None}
     report.append("## 1. ROUGE on the held-out validation split\n\nF1 scores in [0, 1] with Porter stemming; "
-                  "ROUGE-Lsum 95% bootstrap CI. *Seen* = the report text also occurs in the training split.\n\n"
+                  "ROUGE-Lsum 95% bootstrap CI. *Seen* = the report text also occurs in the training split; "
+                  "*clean* = new report text and an X-ray study that never occurs in training.\n\n"
                   + md_table(["System", "ROUGE-1", "ROUGE-2", "ROUGE-L", "ROUGE-Lsum", "ROUGE-Lsum 95% CI",
-                              "ROUGE-Lsum seen", "ROUGE-Lsum unseen"], rows))
+                              "ROUGE-Lsum seen", "ROUGE-Lsum unseen", "ROUGE-Lsum clean"], rows))
     # by source
     src_rows = []
     for source in sorted(val["source"].unique()):
@@ -339,9 +355,11 @@ def main():
               os.path.join(args.figures, "rouge_systems.png"), "F1", "ROUGE on the held-out validation split",
               errors={"rougeLsum": [bootstrap_ci(rouge[n]["rougeLsum"]) for n in names]})
     if seen.any() and (~seen).any():
-        bar_chart(names, {"seen in training": [rouge[n]["rougeLsum"][seen].mean() for n in names],
-                          "unseen (new report text)": [rouge[n]["rougeLsum"][~seen].mean() for n in names]},
-                  os.path.join(args.figures, "rouge_seen_unseen.png"), "ROUGE-Lsum F1",
+        series = {"seen in training": [rouge[n]["rougeLsum"][seen].mean() for n in names],
+                  "unseen (new report text)": [rouge[n]["rougeLsum"][~seen].mean() for n in names]}
+        if clean.any():
+            series["clean (new text and new X-ray study)"] = [rouge[n]["rougeLsum"][clean].mean() for n in names]
+        bar_chart(names, series, os.path.join(args.figures, "rouge_seen_unseen.png"), "ROUGE-Lsum F1",
                   "Seen vs. unseen reports: how much of the score is memorisation?")
     # ROUGE vs. report length
     lengths = np.array([len(words(s)) for s in srcs])
@@ -361,7 +379,7 @@ def main():
 
     # ---- 2. readability ----------------------------------------------------------------------
     textm = {n: text_metrics(outputs[n]["validation"]["summary"].astype(str), srcs, jargon) for n in names}
-    textm["Human reference"] = text_metrics(refs, srcs, jargon)
+    textm[REFERENCE] = text_metrics(refs, srcs, jargon)
     textm["Expert report (input)"] = text_metrics(srcs, srcs, jargon)
     rrows = []
     for n, t in textm.items():
@@ -373,8 +391,8 @@ def main():
                                                     "words": float(t["words"].mean()), "empty": float(t["empty"].mean()),
                                                     "near_copy": float(t["near_copy"].mean())}
     report.append("## 2. Readability (validation)\n\nFlesch-Kincaid grade (patient material targets about grade 6-8); "
-                  "jargon = share of words typical of expert reports but avoided by the human lay writers (learned "
-                  "from the training split); near-copy = the output is (almost) the input report.\n\n"
+                  "jargon = share of words typical of expert reports but avoided in the reference lay summaries "
+                  "(learned from the training split); near-copy = the output is (almost) the input report.\n\n"
                   + md_table(["Text", "Grade (mean)", "Grade (median)", "Grade <= 8", "Jargon words", "Words",
                               "Empty", "Near-copy of report"], rrows))
     fig, ax = plt.subplots(figsize=(8, 4))
@@ -390,7 +408,7 @@ def main():
 
     # ---- 3. clinical safety audit -------------------------------------------------------------
     safe_val = {n: safety_metrics(outputs[n]["validation"]["summary"].astype(str), srcs) for n in names}
-    safe_val["Human reference"] = safety_metrics(refs, srcs)
+    safe_val[REFERENCE] = safety_metrics(refs, srcs)
     safe_test = {n: safety_metrics(outputs[n]["test"]["summary"].astype(str), test["radiology_report"])
                  for n in names if len(test)}
     srows = []
@@ -404,9 +422,9 @@ def main():
             metrics.setdefault("safety_test", {})[n] = {k: float(safe_test[n][k].mean()) for k in ("any_flag",) + FLAG_TYPES}
     report.append("## 3. Clinical-safety audit against the source report\n\nShare of summaries with at least one "
                   f"flag on a critical finding ({', '.join(CRITICAL)}), on the {int((~seen).sum()):,} UNSEEN validation "
-                  "reports; last column: same on the official test reports (all new). The *Human reference* row is "
-                  "the checker's false-alarm floor (human lay writers paraphrase in ways the rules miss, and some "
-                  "references are genuinely incomplete); judge models relative to it.\n\n"
+                  f"reports; last column: same on the official test reports (new report text). The *{REFERENCE}* row "
+                  "is the checker's false-alarm floor (the reference summaries paraphrase in ways the rules miss, and "
+                  "some are genuinely incomplete); judge models relative to it.\n\n"
                   + md_table(["Text", "Any flag", "Omission", "Hallucination", "Polarity flip", "Certainty upgrade",
                               "Certainty downgrade", "Left/right swap", "False reassurance", "Any flag (test)"], srows))
     bar_chart(list(safe_val), {k.replace("_", " "): [safe_val[n][~seen][k].mean() for n in safe_val]
@@ -414,8 +432,8 @@ def main():
                                          "laterality_swap")},
               os.path.join(args.figures, "safety_flags.png"), "share of summaries",
               "Automatic safety flags on unseen validation reports",
-              hline=float(safe_val["Human reference"][~seen]["any_flag"].mean()),
-              hline_label="human reference: any flag")
+              hline=float(safe_val[REFERENCE][~seen]["any_flag"].mean()),
+              hline_label="reference summaries: any flag")
 
     # ---- 4. confidence and guardrails ---------------------------------------------------------
     err_ref = {n: np.array([disagrees(s, r) for s, r in zip(outputs[n]["validation"]["summary"].astype(str), refs)])
@@ -448,9 +466,9 @@ def main():
         grows.append([n, "AUROC of low confidence for errors", fmt(a_err), "", f"(for checker flags: {fmt(a_flag)})"])
     if grows:
         report.append("## 4. Confidence and guardrails (validation)\n\nError label (offline audit): the summary "
-                      "disagrees with the human reference on whether a critical finding is present. *Auto-approved* "
+                      "disagrees with the reference summary on whether a critical finding is present. *Auto-approved* "
                       "= released to the patient without review; *errors caught* = share of all errors routed to a "
-                      "human; *residual error* = error rate among auto-approved summaries.\n\n"
+                      "clinician; *residual error* = error rate among auto-approved summaries.\n\n"
                       + md_table(["System", "Policy", "Auto-approved", "Errors caught", "Residual error"], grows))
         fig, ax = plt.subplots(figsize=(6.5, 4))
         for n, (cov, risk) in rc_curves.items():
@@ -497,7 +515,7 @@ def main():
         per[f"{k}_rougeLsum"] = rouge[n]["rougeLsum"]
         per[f"{k}_flags"] = safe_val[n]["flag_detail"].to_numpy()
         per[f"{k}_mean_logprob"] = outputs[n]["validation"]["mean_logprob"].to_numpy()
-    per["reference_flags"] = safe_val["Human reference"]["flag_detail"].to_numpy()
+    per["reference_flags"] = safe_val[REFERENCE]["flag_detail"].to_numpy()
     per.to_csv(os.path.join(args.out, "per_example_validation.csv"), index=False)
 
     if main_name in outputs:
@@ -525,7 +543,7 @@ def main():
             for i in idx:
                 row = per.iloc[i]
                 md += [f"### {row['uid']} ({row['source']})", f"- **Report:** {row['radiology_report']}",
-                       f"- **Human reference:** {row['layman_report']}"]
+                       f"- **{REFERENCE}:** {row['layman_report']}"]
                 for n in names:
                     if systems[n]["kind"] == "model":
                         md.append(f"- **{n}:** {row[f'{slug(n)}_summary']}")
@@ -533,6 +551,32 @@ def main():
                        f"ROUGE-Lsum {fmt(row[f'{mk}_rougeLsum'])}", ""]
                 cand_rows.append({"category": title, "uid": row["uid"], "flags": row[f"{mk}_flags"],
                                   "mean_logprob": conf[i], "rougeLsum": row[f"{mk}_rougeLsum"]})
+        # The same failure types on the official test split. No reference summaries are published for
+        # it, so the cases are flagged against the report itself and there is no ROUGE.
+        if len(test) and main_name in safe_test:
+            st = safe_test[main_name]
+            tconf = outputs[main_name]["test"]["mean_logprob"].to_numpy(dtype=float)
+            md += ["# Test-split candidates", "",
+                   f"Official test reports ({len(test):,} sampled; no references), checked against the report "
+                   "itself. The task sheet asks for the safety audit on test cases, so 1-2 of these belong in "
+                   "README Section 7.7 next to the validation cases.", ""]
+            for title, key in (("Polarity flip", "polarity_flip"), ("Omission of a critical finding", "omission"),
+                               ("Hallucinated finding", "hallucination"), ("Certainty upgrade", "certainty_upgrade"),
+                               ("False reassurance", "false_reassurance")):
+                mask = st[key].to_numpy()
+                idx = np.where(mask)[0]
+                idx = idx[np.argsort(-np.nan_to_num(tconf[idx], nan=-1e9))][:3]   # most confident errors first
+                md += [f"## Test: {title}: {int(mask.sum())} of {len(test):,} reports", ""]
+                for i in idx:
+                    md += [f"### {test['uid'].iloc[i]} ({test['source'].iloc[i]})",
+                           f"- **Report:** {test['radiology_report'].iloc[i]}"]
+                    for n in names:
+                        if systems[n]["kind"] == "model":
+                            md.append(f"- **{n}:** {outputs[n]['test']['summary'].astype(str).iloc[i]}")
+                    md += [f"- Flags ({main_name}): {st['flag_detail'].iloc[i] or 'none'} | confidence {fmt(tconf[i])}", ""]
+                    cand_rows.append({"category": f"test: {title}", "uid": test["uid"].iloc[i],
+                                      "flags": st["flag_detail"].iloc[i], "mean_logprob": tconf[i],
+                                      "rougeLsum": float("nan")})
         with open(os.path.join(args.out, "autopsy_candidates.md"), "w") as f:
             f.write("\n".join(md) + "\n")
         write_csv(cand_rows, os.path.join(args.out, "autopsy_candidates.csv"))

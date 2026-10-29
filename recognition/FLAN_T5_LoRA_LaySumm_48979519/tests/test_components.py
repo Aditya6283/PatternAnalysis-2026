@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from dataset import (LengthGroupedBatchSampler, Seq2SeqCollator, group_dev_split,  # noqa: E402
                      token_budget_batches,  # noqa: E402
-                     normalise_report)
+                     normalise_report, study_key)
 from modules import (IGNORE_INDEX, LaySummariser, LoRALinear, count_parameters,  # noqa: E402
                      format_prompt, inject_lora, lora_state_dict, merge_lora)
 import safety  # noqa: E402
@@ -188,6 +188,16 @@ def test_dev_split_shares_no_report_text_with_train():
     assert not (tk & dk) and len(dev) >= 20
     assert "no significant findings" in tk                          # boiler-plate stays in training
     assert normalise_report("No  significant findings.") == "no significant findings"
+
+
+def test_study_key_groups_the_images_of_one_examination():
+    df = pd.DataFrame({"source": ["PadChest", "PadChest", "PadChest", "BIMCV-COVID19", "OpenI"],
+                       "images_path": ["2168401_00-141-160.png", "2168401_00-141-123.png", "9999_00-1-1.png",
+                                       "ses-E1", "['/front/CXR1_IM-1.png']"]})
+    keys = study_key(df).tolist()
+    assert keys[0] == keys[1]                    # two images of the same PadChest examination
+    assert keys[0] != keys[2]                    # a different examination
+    assert len(set(keys)) == 4                   # BIMCV sessions and Open-i studies stay separate
 
 
 # ---------------------------------------------------------------------------

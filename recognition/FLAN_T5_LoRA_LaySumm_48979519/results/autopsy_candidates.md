@@ -2,7 +2,7 @@
 
 Real failure cases picked automatically from the UNSEEN validation reports. Read them, check that the flag is a genuine error (the checker can be wrong), then pick 3-5 for README Section 7.7 and explain the trigger and the clinical consequence in your own words.
 
-## Polarity flip (finding present <-> absent): 137 unseen cases
+## Polarity flip (finding present <-> absent): 140 unseen cases
 
 ### validation-7231 (PadChest)
 - **Report:** Central venous catheter with entry through the right jugular vein, with its distal end in the superior vena cava. Nasogastric tube positioned below the diaphragm. No significant changes or increased density in the left hemithorax compared to the previous examination dated 02 11 2009.
@@ -80,7 +80,7 @@ Real failure cases picked automatically from the UNSEEN validation reports. Read
 - **Full fine-tuned:** The right side of the diaphragm, which is the muscle that separates the chest from the abdomen, is slightly higher than normal. The left side of the heart is larger than usual. The main blood vessel, called the aorta, is longer than usual. There is no sign of pneumonia. If symptoms continue, a chest CT scan is suggested.
 - Flags (LoRA fine-tuned): hallucination: cardiomegaly | confidence -0.103 | ROUGE-Lsum 0.699
 
-## Certainty upgrade (suspected -> definite): 84 unseen cases
+## Certainty upgrade (suspected -> definite): 85 unseen cases
 
 ### validation-240 (PadChest)
 - **Report:** Central venous catheter traversing the right jugular vein with its tip in the superior vena cava. Radiological signs of COPD. Slight interstitial pattern in the left lower lung field, possibly indicative of early congestive heart failure.
