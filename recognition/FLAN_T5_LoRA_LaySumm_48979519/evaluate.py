@@ -25,7 +25,8 @@ and writes the tables / figures for README Section 7:
   4. Guardrails: does the model's confidence (mean token log-probability) predict errors?
      Errors are labelled offline by disagreement with the reference summary on any critical
      finding; deployable guardrails (confidence filter, entity check, both) are scored by
-     coverage (share auto-approved), errors caught and residual error rate.
+     coverage (share auto-approved), errors caught and residual error rate, and the
+     confidence ranking is drawn as a risk-coverage curve [1].
   5. Resource profile: parameters, trainable parameters, training time / VRAM (from
      runs/*/summary.json), inference latency, throughput and VRAM, checkpoint size.
   6. Autopsy candidates: real failure cases per error type, from the unseen validation reports
@@ -35,6 +36,11 @@ Generated summaries are cached in results/generations/ (use --regenerate to redo
 
 Usage
     python evaluate.py --lora runs/lora/best.pt --full runs/full/best.pt
+
+References:
+    [1] Y. Geifman, R. El-Yaniv. Selective Classification for Deep Neural Networks. NeurIPS 2017
+        (risk-coverage curves). ROUGE and the bootstrap are cited in utils.py, NegEx and the
+        Flesch-Kincaid grade in safety.py.
 """
 
 import argparse

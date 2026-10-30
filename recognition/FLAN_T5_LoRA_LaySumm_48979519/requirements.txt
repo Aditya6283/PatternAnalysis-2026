@@ -1,15 +1,16 @@
-# FLAN-T5 lay summaries - Python dependencies (record the exact versions you used in README Section 3).
-# On Rangpur the 'torch' conda env already has torch, numpy and matplotlib; add the rest with
-#   pip install --no-cache-dir "transformers>=4.44,<5" sentencepiece rouge-score pandas pyarrow scikit-learn pytest
-torch>=2.1
-transformers>=4.44,<5
-tokenizers
-sentencepiece
-huggingface_hub
-rouge-score>=0.1.2
-pandas
-pyarrow
-numpy
-scikit-learn      # TF-IDF retrieval baseline only
-matplotlib
-pytest            # unit tests
+# FLAN-T5 lay summaries - the exact package versions behind the results in README Section 3
+# (Python 3.11.15, printed on Rangpur by utils.library_versions()).
+# On Rangpur the 'torch' conda env already provides torch 2.13.0+cu130, numpy and matplotlib,
+# so `pip install -r requirements.txt` there only adds the packages that are missing.
+torch==2.13.0
+transformers==4.57.6
+tokenizers==0.22.2
+sentencepiece==0.2.2
+huggingface_hub==0.36.2
+rouge-score==0.1.2
+pandas==3.1.0
+pyarrow==26.0.0
+numpy==2.4.6
+scikit-learn==1.9.1   # TF-IDF retrieval baseline only
+matplotlib==3.11.2
+pytest==9.2.0         # unit tests
