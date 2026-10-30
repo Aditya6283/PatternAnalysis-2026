@@ -23,3 +23,18 @@ Near-copy of the expert report (not lay language),validation-6670,,-0.0154756521
 Lowest ROUGE-Lsum among long reports,validation-6951,omission: lung_opacity_infection,-0.047092653810977936,0.014035087719298246
 Lowest ROUGE-Lsum among long reports,validation-5952,,-0.04883883148431778,0.324561403508772
 Lowest ROUGE-Lsum among long reports,validation-8942,,-0.05161736160516739,0.4321608040201005
+test: Polarity flip,test-5710,polarity_flip: pleural_effusion,-0.08670245856046677,nan
+test: Polarity flip,test-1899,polarity_flip: lung_opacity_infection,-0.10516101121902466,nan
+test: Polarity flip,test-3847,polarity_flip: nodule_mass,-0.11316493898630142,nan
+test: Omission of a critical finding,test-8827,omission: lung_opacity_infection,-0.04722578078508377,nan
+test: Omission of a critical finding,test-6266,omission: lung_opacity_infection,-0.09640966355800629,nan
+test: Omission of a critical finding,test-1466,omission: nodule_mass,-0.12541812658309937,nan
+test: Hallucinated finding,test-6891,hallucination: cardiomegaly,-0.11344745010137558,nan
+test: Hallucinated finding,test-1132,omission: lung_opacity_infection; hallucination: pulmonary_edema,-0.12714651226997375,nan
+test: Hallucinated finding,test-7663,hallucination: cardiomegaly,-0.12885412573814392,nan
+test: Certainty upgrade,test-8628,omission: lung_opacity_infection; certainty_upgrade: pulmonary_edema,-0.12592069804668427,nan
+test: Certainty upgrade,test-2984,"hallucination: pneumothorax; certainty_upgrade: pleural_effusion,lung_opacity_infection",-0.1430482566356659,nan
+test: Certainty upgrade,test-7492,omission: lung_opacity_infection; certainty_upgrade: pulmonary_edema,-0.15399739146232605,nan
+test: False reassurance,test-5983,omission: pleural_effusion; false_reassurance,-0.1306770294904709,nan
+test: False reassurance,test-7369,omission: cardiomegaly; false_reassurance,-0.14831331372261047,nan
+test: False reassurance,test-9153,omission: fracture; false_reassurance,-0.17229364812374115,nan

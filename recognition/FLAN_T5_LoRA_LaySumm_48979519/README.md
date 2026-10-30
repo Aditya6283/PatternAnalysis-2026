@@ -392,7 +392,7 @@ The rule-based checker (`safety.py`) works in three steps:
 
 **Calibration.** On the reference summaries, the checker fires on 16% of the validation reports (22% of the unseen ones). That is its noise floor. The references paraphrase in ways the rules miss, and some of them really do omit or garble findings. So the models are judged relative to the reference row. The checker does not cover dates, sizes, anatomy outside the seven findings, or the wrong imaging modality.
 
-Share of summaries with at least one flag, on the 5,505 **unseen** validation reports. The last column uses 2,000 official test reports, which have no references.
+Share of summaries with at least one flag, on the 5,505 **unseen** validation reports. The last column uses 2,000 official test reports, which have no references (0.2% of their report texts and 25.9% of their X-ray studies also occur in training).
 
 | Text | Any flag | Omission | Hallucination | Polarity flip | Certainty upgrade | Certainty downgrade | Left/right swap | False reassurance | Any flag (test) |
 |---|---|---|---|---|---|---|---|---|---|
@@ -447,21 +447,21 @@ AUROC of low confidence (mean token log-probability) as a predictor of errors: *
 - **Caveat:** the entity check and the error label both come from the lexicon in `safety.py`, so "errors caught" partly measures the checker agreeing with itself. The manual check in Section 7.4 shows the checker's blind spots (dates, anatomy), so the true residual error is higher than 7%.
 
 ### 7.6 Resource profile: LoRA vs. full fine-tuning
-Measured on one A100-PCIE-40GB with greedy decoding. *Batched* means 256 validation reports in batches of 64. *Single* is the median over 20 reports summarised one at a time, the way a patient portal would handle a request. The times include the confidence re-scoring pass.
+Measured on one A100-PCIE-40GB with greedy decoding. *Batched* means 256 validation reports in batches of 64. *Single* is the median over 20 reports summarised one at a time, the way a patient portal would handle a request. The times include the confidence re-scoring pass. They come from the final evaluation run and vary by a few percent between runs (up to 8% for the zero-shot model).
 
 | System | Parameters | Trainable | Train time | Peak train VRAM | Train tokens/s | Checkpoint | ms / report (batched) | ms / report (single) | Generated tokens/s | Peak inference VRAM |
 |---|---|---|---|---|---|---|---|---|---|---|
-| Zero-shot | 247,577,856 | 0 | - | - | - | - | 75.3 | 1,252 | 635 | 2.8 GB |
-| **LoRA** | 249,347,328 | **1,769,472 (0.71%)** | 36.2 min | **13.6 GB** | 22,645 | **6.8 MB** | 63.0 | 1,571 | 846 | 2.8 GB |
-| **Full** | 247,577,856 | 247,577,856 (100%) | 40.6 min | 17.3 GB | 23,800 | 1,133 MB | **50.7** | **1,240** | **1,066** | 3.1 GB |
+| Zero-shot | 247,577,856 | 0 | - | - | - | - | 81.3 | 1,286 | 589 | 2.8 GB |
+| **LoRA** | 249,347,328 | **1,769,472 (0.71%)** | 36.2 min | **13.6 GB** | 22,645 | **6.8 MB** | 63.1 | 1,583 | 845 | 2.8 GB |
+| **Full** | 247,577,856 | 247,577,856 (100%) | 40.6 min | 17.3 GB | 23,800 | 1,133 MB | **51.4** | **1,255** | **1,053** | 3.1 GB |
 
 - **LoRA saves memory and storage, not time.** It trains 0.71% of the weights, needs 21% less training memory and stores a checkpoint 167 times smaller (6.8 MB vs. 1.1 GB). But training is only 11% faster (36 vs. 41 minutes, at a similar number of tokens per second), because the gradient still has to flow backwards through the whole frozen network. LoRA only skips the weight gradients and optimiser state of the frozen weights. At FLAN-T5-base scale both modes fit easily on one 40 GB GPU, so memory is not the deciding factor here. Storage is: one base model can serve a separate 7 MB adapter for each hospital or report style.
-- **Inference:** LoRA was profiled with its adapters *unmerged*, which adds two small matrix products in each of the 72 adapted layers. That is the main reason it is slower than full fine-tuning (846 vs. 1,066 generated tokens/s). `predict.py --export-merged` folds the adapters into the weights, after which a LoRA model costs exactly the same as the base model.
-- **AC5 is partly met.** Peak training VRAM is 13.6 and 17.3 GB (within 40 GB ✓), and batched inference takes 51-63 ms per report (✓). Summarising a *single* report takes 1.2-1.6 s (✗). Decoding is sequential, with one forward pass per generated word piece, so a single report cannot use the GPU's parallelism. In practice this matters little for a patient portal, because reports can be summarised in batches when they are signed off rather than on demand. Still, as written, the criterion is missed.
+- **Inference:** LoRA was profiled with its adapters *unmerged*, which adds two small matrix products in each of the 72 adapted layers. That is the main reason it is slower than full fine-tuning (845 vs. 1,053 generated tokens/s). `predict.py --export-merged` folds the adapters into the weights, after which a LoRA model costs exactly the same as the base model.
+- **AC5 is partly met.** Peak training VRAM is 13.6 and 17.3 GB (within 40 GB ✓), and batched inference takes 51-63 ms per report (✓). Summarising a *single* report takes 1.3-1.6 s (✗). Decoding is sequential, with one forward pass per generated word piece, so a single report cannot use the GPU's parallelism. In practice this matters little for a patient portal, because reports can be summarised in batches when they are signed off rather than on demand. Still, as written, the criterion is missed.
 - The optional ablations in `scripts/run_ablation.sh` (LoRA ranks 4 and 64, LoRA on every linear layer, FLAN-T5-small) were not run within the compute budget.
 
 ### 7.7 Failure case autopsy
-Four real failures from the unseen validation reports. They were chosen from `results/autopsy_candidates.md` (candidates picked automatically for each error type) and from the manual check in Section 7.4, so that together they cover the task's three categories, (a) hallucination, (b) omission and (c) readability, plus one factual error that no automatic check sees. Each case also says how common the failure is. The cases come from the validation split because only it has reference summaries to compare against. The official test split was used for the reference-free flag rates in Section 7.4, which match the validation rates.
+Five real failures. They were chosen from `results/autopsy_candidates.md`, which lists candidates picked automatically for each error type on the unseen validation reports and on 2,000 official test reports, and from the manual check in Section 7.4. Together they cover the task's three categories, (a) hallucination, (b) omission and (c) readability, plus one factual error that no automatic check sees. Cases 1 to 4 come from the validation split, where a reference summary is available for comparison. Case 5 comes from the official test split, where a summary can only be checked against its own report. Each case also says how common the failure is.
 
 **Case 1: negation lost, finding invented (hallucination). validation-8987, PadChest.**
 - *Report:* "Cardiomegaly is not evident. No signs of acute pulmonary edema."
@@ -488,12 +488,25 @@ Four real failures from the unseen validation reports. They were chosen from `re
 - *Trigger:* PadChest comes from a Spanish hospital [12] and writes dates day-first. On the validation split, 558 dates have a first number above 12 and none has a second number above 12, so this date is 9 January. On the 325 validation reports with an ambiguous date (both numbers 12 or less), the reference summaries give the month-first reading in 89% of the cases where they name the month, and both fine-tuned models do so in 95%. GPT-4o made this mistake when it wrote the training labels, and the models learned it and apply it even more consistently. The same happens with wording: for reports that mention infiltrates (or alveolar or interstitial changes) but no fluid, the reference summaries still talk about "fluid" 18% of the time, and LoRA's summaries 17% of the time.
 - *Consequence:* the comparison date can be off by up to 11 months, so a patient may think a different scan is meant. ROUGE *rewards* the error, because the reference contains it. The checker does not look at dates, and the confidence is normal. About 3% of all validation reports contain such a date.
 
+**Case 5: a whole-body CT squeezed into chest X-ray language (hallucination and omission). test-5983, BIMCV-COVID19, official test split.**
+- *Report:* a 327-word CT report that runs from the head to the pelvis. Its findings include the brain ("The ventricular system is of normal size and position. No signs of intra- or extra-axial bleeding are detected."), "A small right pleural effusion is present", and a conclusion at the very end: "the right kidney is not visualized. Pathological right inguinal lymphadenopathy is present."
+- *LoRA:* "… **The heart's heart system** is normal in size and position. No signs of **bleeding inside or outside the heart** are seen. …" It also places the effusion "in the right chest wall".
+- *Full fine-tuning:* "The results show no problems in the sinuses, **lungs, or the area where the lungs connect to the windpipe**. **The bottom parts of the lungs** are visible and not occupied. …", which is its version of the eye sockets, the sella turcica and the basal cisterns of the brain.
+- *Trigger:* the report is out of scope and too long. Both models have only learned chest X-ray reports, where "ventricular" usually refers to the heart and "basal" to the bottom of the lungs, so they map brain anatomy onto the chest. With the prompt, the report is 555 tokens, but inputs are cut at 384 tokens, so the models only see the first 226 of its 327 words. LoRA's summary stops exactly at that cut ("…except for uncomplicated"), and full fine-tuning starts repeating a sentence until it reaches the 320-token output limit.
+- *Consequence:* the patient reads about their heart and lungs in sentences that really describe their brain, and is never told about the enlarged lymph node in the groin, one of the two findings the radiologist put in the conclusion. The checker does flag the summary, but only for the effusion, which it fails to recognise in the new wording, not for the invented heart statements or the missing lymph node, which are outside its seven findings. ROUGE cannot be computed, because test reports have no references. 124 of the 10,537 test reports (1.2%) are long enough to be cut by the input limit, against 0.5% on validation.
+
 | Case | Category | Trigger | ROUGE-Lsum | Safety flag? | Confidence |
 |---|---|---|---|---|---|
 | 1. "Cardiomegaly is not evident" → "heart appears enlarged" | hallucination | negation after the finding, almost absent from training | 0.94 (looks excellent) | yes | very high |
 | 2. "name, name, name, …" | omission | anonymisation placeholders and greedy decoding | 0.01 | yes | very high |
 | 3. Report copied word for word | readability | a templated report whose header the references copy | 0.72 | **no** | highest |
 | 4. 09 01 2013 → "September 1" | factual detail | a systematic error in the GPT-4o references | rewarded | **no** | normal |
+| 5. Whole-body CT → "the heart's heart system" | hallucination and omission | an out-of-scope report, longer than the input limit | n/a (no reference) | yes, but for the wrong reason | normal |
+
+**Other test-split flags.** The remaining test-split candidates show the same things as the validation split:
+- **Many top-ranked flags are checker false alarms on correct summaries.** "Resolution of left pleural effusion" became "the fluid buildup … has cleared up" (test-5710). "Fracture in the process of consolidation" (a healing rib) made the checker see lung consolidation, so the correct "no signs of lung infections" looked like a polarity flip (test-1899).
+- **Some lay wording is vague in a way that matters.** In LoRA's summary, "enlarged hila" became "the areas where the lungs connect to the heart are larger than normal" (test-6891), which the checker, and possibly a patient, reads as an enlarged heart. "Callus formation at the fracture site of the fourth right costal arch" became "a healing bone at the site of the fourth rib" (test-9153), which never says that the rib was broken. Full fine-tuning adds "where it was broken".
+- **Unambiguous dates are converted correctly.** "21 02 2011" became "February 21, 2011" (test-3847) and "24 9 2009" became "September 24, 2009" (test-8628), so the date error in case 4 only affects dates whose two numbers are both 12 or less.
 
 **Why ROUGE alone does not guarantee clinical safety.** ROUGE counts the words a summary shares with one reference summary. It has no idea which of those words carry the medical meaning. These cases show three ways that goes wrong:
 - One changed phrase can reverse the meaning while barely changing the score. The invented enlarged heart in case 1 scores 0.94.
@@ -502,7 +515,7 @@ Four real failures from the unseen validation reports. They were chosen from `re
 
 A high average ROUGE therefore says the style is right, not that each summary is safe. Safety needs checks that look at the findings themselves (Sections 7.4 and 7.5).
 
-The overall pattern: the fine-tuned models fail where the training data is thin (case 1) or where the GPT-4o references are themselves inconsistent or wrong (cases 3 and 4), and the decoder has no protection against loops (case 2). None of the four is reliably caught by ROUGE or by the model's confidence.
+The overall pattern: the fine-tuned models fail where the training data is thin (case 1), where the GPT-4o references are themselves inconsistent or wrong (cases 3 and 4), and where the input is unlike anything they were trained on (case 5). The decoder also has no protection against loops (cases 2 and 5). None of the five is reliably caught by ROUGE or by the model's confidence.
 
 ### 7.8 Recommendation to the project manager
 
@@ -514,7 +527,7 @@ The overall pattern: the fine-tuned models fail where the training data is thin 
 | AC2 | Median reading grade ≤ 8 | 6.3 | 6.4 | ✅ |
 | AC3 | Flag rate ≤ 1.5 × the reference rate (33%), false reassurance ≤ 0.5% | 19.2% and 0.1% | 20.1% and 0.2% | ✅ |
 | AC4 | Guardrail approves ≥ 80%, with a residual error at most half the unfiltered error | 86.8% approved, 7.7% vs. 13.2% (ratio 0.58) | 86.2% approved, 7.0% vs. 12.4% (ratio 0.56) | ❌ narrowly |
-| AC5 | Training VRAM ≤ 40 GB, at most 1 s per report | 13.6 GB, 1.57 s single, 63 ms batched | 17.3 GB, 1.24 s single, 51 ms batched | ⚠️ VRAM ✅, single-report latency ❌ |
+| AC5 | Training VRAM ≤ 40 GB, at most 1 s per report | 13.6 GB, 1.58 s single, 63 ms batched | 17.3 GB, 1.25 s single, 51 ms batched | ⚠️ VRAM ✅, single-report latency ❌ |
 
 **Answer to the dilemma.** Fine-tuning does more than improve fluency. Measured against the reference summaries, the fine-tuned models disagree on a critical finding in 12-13% of reports, against 21% for the zero-shot model. When the zero-shot model actually rewrites a report instead of copying it, 36.8% of its summaries are flagged, almost twice the fine-tuned rate. Fine-tuning also brings the reading level down from grade 12.7 to 6.3. But it learns the habits of whoever wrote the references, bad ones included. GPT-4o wrote them, and its date mistake became the models' mistake (case 4). The models also make rare, confident slips on unusual phrasing (case 1). **ROUGE cannot see any of this.** It gives 0.94 to an invented enlarged heart, rewards a wrong date, and rates a summary of someone else's X-ray (retrieval) at ROUGE-1 0.58.
 
@@ -525,7 +538,7 @@ The overall pattern: the fine-tuned models fail where the training data is thin 
    - *Do not use the model's confidence* as a release rule. It barely predicts errors (AUROC 0.60), and the most confident outputs are copies and loops.
    - *Clean the input and the output:* strip anonymisation headers before summarising, copy dates over exactly as written (or convert them with a day-first rule), stop repetition during decoding (`no_repeat_ngram_size=3`), and send any output that nearly copies the report or repeats itself to a clinician.
    - *Always show the original report* next to the summary, with a note asking the patient to discuss it with their doctor.
-3. **Do not use it for** reports outside the training scope (CT reports such as validation-2771, non-chest studies, non-English text), or for any report with a critical finding (pneumothorax, mass, fracture) without a clinician's sign-off, whatever the checker says.
+3. **Do not use it for** reports outside the training scope (CT reports such as validation-2771 and test-5983, non-chest studies, non-English text, or reports longer than the 384-token input limit), or for any report with a critical finding (pneumothorax, mass, fracture) without a clinician's sign-off, whatever the checker says.
 4. **Next steps, cheapest first:**
    - Fix the dates (and other GPT-4o slips) in the training references and retrain, which takes about 40 minutes.
    - Add the decoding and pre-processing fixes above and evaluate again.
@@ -543,7 +556,7 @@ The overall pattern: the fine-tuned models fail where the training data is thin 
 - **One run per configuration.** Each model was trained once, with one seed. The learning rates were fixed in advance (1e-3 for LoRA, 1e-4 for full fine-tuning) rather than tuned on the dev split. LoRA was only applied to q and v at rank 16, and the rank ablations in `scripts/run_ablation.sh` were not run. The dev loss was still falling after 3 epochs.
 - **Greedy decoding** without repetition control causes the loops in case 2. Beam search or `no_repeat_ngram_size` might also raise ROUGE, but every system would have to be generated again.
 - **No clinical review.** The autopsy cases and the 20 flag verdicts were judged by a non-clinician, and how well patients understand the summaries was not measured.
-- **Scope.** English chest X-ray reports only (PadChest and BIMCV were translated from Spanish), text only, and one dataset. Latency was measured with unmerged LoRA adapters and includes the confidence pass.
+- **Scope.** English chest X-ray reports only (PadChest and BIMCV were translated from Spanish), text only, and one dataset. Inputs longer than 384 tokens are cut, which loses the end of 0.5% of validation and 1.2% of test reports (case 5). Latency was measured with unmerged LoRA adapters and includes the confidence pass.
 
 ---
 

@@ -10,7 +10,8 @@
         0.34528094301870504
       ],
       "rougeLsum_seen": 0.3168584851754891,
-      "rougeLsum_unseen": 0.3632657190976305
+      "rougeLsum_unseen": 0.3632657190976305,
+      "rougeLsum_clean": 0.36607126102899723
     },
     "Retrieval (nearest train report)": {
       "rouge1": 0.5840699093749173,
@@ -22,7 +23,8 @@
         0.5452839759375259
       ],
       "rougeLsum_seen": 0.5818553426116709,
-      "rougeLsum_unseen": 0.5071738199192343
+      "rougeLsum_unseen": 0.5071738199192343,
+      "rougeLsum_clean": 0.45662099944457335
     },
     "Zero-shot FLAN-T5": {
       "rouge1": 0.30920863432088924,
@@ -34,7 +36,8 @@
         0.2925974660727802
       ],
       "rougeLsum_seen": 0.26937448633785754,
-      "rougeLsum_unseen": 0.30592178546349497
+      "rougeLsum_unseen": 0.30592178546349497,
+      "rougeLsum_clean": 0.3086354995343765
     },
     "LoRA fine-tuned": {
       "rouge1": 0.732138065465413,
@@ -46,7 +49,8 @@
         0.7057339242490368
       ],
       "rougeLsum_seen": 0.7407767174840313,
-      "rougeLsum_unseen": 0.6706456869503548
+      "rougeLsum_unseen": 0.6706456869503548,
+      "rougeLsum_clean": 0.6688369780823983
     },
     "Full fine-tuned": {
       "rouge1": 0.7485168479763499,
@@ -58,7 +62,8 @@
         0.723451318648105
       ],
       "rougeLsum_seen": 0.7542468161192457,
-      "rougeLsum_unseen": 0.6921601243405124
+      "rougeLsum_unseen": 0.6921601243405124,
+      "rougeLsum_clean": 0.6911692378970964
     }
   },
   "paired_bootstrap": {
@@ -157,7 +162,7 @@
       "empty": 0.0,
       "near_copy": 0.0019
     },
-    "Human reference": {
+    "Reference (GPT-4o)": {
       "grade_mean": 6.979005473282988,
       "grade_median": 6.664722891566267,
       "grade_le_8": 0.6751675167516752,
@@ -227,7 +232,7 @@
       "laterality_swap": 0.0016348773841961854,
       "false_reassurance": 0.0021798365122615805
     },
-    "Human reference": {
+    "Reference (GPT-4o)": {
       "any_flag": 0.22252497729336967,
       "omission": 0.1293369663941871,
       "hallucination": 0.05794732061762035,
@@ -400,10 +405,10 @@
         "epochs_run": null
       },
       "inference": {
-        "ms_per_report_batched": 75.28774523962056,
-        "generated_tokens_per_s": 635.2710503917469,
+        "ms_per_report_batched": 81.26062024166458,
+        "generated_tokens_per_s": 588.5769128731949,
         "peak_inference_vram_mb": 2792.03271484375,
-        "latency_ms_single_report": 1252.0876238122582,
+        "latency_ms_single_report": 1286.411524284631,
         "parameters_total": 247577856,
         "parameters_trainable": 0
       }
@@ -420,10 +425,10 @@
         "epochs_run": 3.0
       },
       "inference": {
-        "ms_per_report_batched": 63.02494657211355,
-        "generated_tokens_per_s": 846.0811416791299,
+        "ms_per_report_batched": 63.06918826157926,
+        "generated_tokens_per_s": 845.487633816341,
         "peak_inference_vram_mb": 2802.03271484375,
-        "latency_ms_single_report": 1571.2066604755819,
+        "latency_ms_single_report": 1583.453637547791,
         "parameters_total": 249347328,
         "parameters_trainable": 1769472
       }
@@ -440,10 +445,10 @@
         "epochs_run": 3.0
       },
       "inference": {
-        "ms_per_report_batched": 50.748533260048134,
-        "generated_tokens_per_s": 1066.148423891388,
+        "ms_per_report_batched": 51.36568012312637,
+        "generated_tokens_per_s": 1053.338895159301,
         "peak_inference_vram_mb": 3098.31396484375,
-        "latency_ms_single_report": 1239.7480779327452,
+        "latency_ms_single_report": 1254.7224112786353,
         "parameters_total": 247577856,
         "parameters_trainable": 247577856
       }

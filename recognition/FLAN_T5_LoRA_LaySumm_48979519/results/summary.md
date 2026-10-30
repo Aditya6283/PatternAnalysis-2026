@@ -1,18 +1,18 @@
 # Evaluation summary
 
-Held-out official validation split: 10,000 reports (45.0% also occur verbatim in the training split; 5,505 unseen). Reference-free safety audit on 2,000 official test reports (0.2% seen in training).
+Held-out official validation split: 10,000 reports (45.0% also occur verbatim in the training split; 5,505 unseen; 30.4% share an X-ray study with a training row; 4,083 are new in both). Reference-free safety audit on 2,000 official test reports (0.2% of report texts and 25.9% of X-ray studies seen in training). The reference summaries were written by GPT-4o (LaymanRRG), so they are silver labels.
 
 ## 1. ROUGE on the held-out validation split
 
-F1 scores in [0, 1] with Porter stemming; ROUGE-Lsum 95% bootstrap CI. *Seen* = the report text also occurs in the training split.
+F1 scores in [0, 1] with Porter stemming; ROUGE-Lsum 95% bootstrap CI. *Seen* = the report text also occurs in the training split; *clean* = new report text and an X-ray study that never occurs in training.
 
-| System | ROUGE-1 | ROUGE-2 | ROUGE-L | ROUGE-Lsum | ROUGE-Lsum 95% CI | ROUGE-Lsum seen | ROUGE-Lsum unseen |
-|---|---|---|---|---|---|---|---|
-| Copy source | 0.364 | 0.139 | 0.329 | 0.342 | [0.340, 0.345] | 0.317 | 0.363 |
-| Retrieval (nearest train report) | 0.584 | 0.360 | 0.511 | 0.541 | [0.536, 0.545] | 0.582 | 0.507 |
-| Zero-shot FLAN-T5 | 0.309 | 0.117 | 0.278 | 0.289 | [0.286, 0.293] | 0.269 | 0.306 |
-| LoRA fine-tuned | 0.732 | 0.547 | 0.682 | 0.702 | [0.699, 0.706] | 0.741 | 0.671 |
-| Full fine-tuned | 0.749 | 0.574 | 0.701 | 0.720 | [0.717, 0.723] | 0.754 | 0.692 |
+| System | ROUGE-1 | ROUGE-2 | ROUGE-L | ROUGE-Lsum | ROUGE-Lsum 95% CI | ROUGE-Lsum seen | ROUGE-Lsum unseen | ROUGE-Lsum clean |
+|---|---|---|---|---|---|---|---|---|
+| Copy source | 0.364 | 0.139 | 0.329 | 0.342 | [0.340, 0.345] | 0.317 | 0.363 | 0.366 |
+| Retrieval (nearest train report) | 0.584 | 0.360 | 0.511 | 0.541 | [0.536, 0.545] | 0.582 | 0.507 | 0.457 |
+| Zero-shot FLAN-T5 | 0.309 | 0.117 | 0.278 | 0.289 | [0.286, 0.293] | 0.269 | 0.306 | 0.309 |
+| LoRA fine-tuned | 0.732 | 0.547 | 0.682 | 0.702 | [0.699, 0.706] | 0.741 | 0.671 | 0.669 |
+| Full fine-tuned | 0.749 | 0.574 | 0.701 | 0.720 | [0.717, 0.723] | 0.754 | 0.692 | 0.691 |
 
 ROUGE-Lsum by data source:
 
@@ -37,7 +37,7 @@ Paired bootstrap on ROUGE-Lsum (same reports; 1,000 resamples). The last column 
 
 ## 2. Readability (validation)
 
-Flesch-Kincaid grade (patient material targets about grade 6-8); jargon = share of words typical of expert reports but avoided by the human lay writers (learned from the training split); near-copy = the output is (almost) the input report.
+Flesch-Kincaid grade (patient material targets about grade 6-8); jargon = share of words typical of expert reports but avoided in the reference lay summaries (learned from the training split); near-copy = the output is (almost) the input report.
 
 | Text | Grade (mean) | Grade (median) | Grade <= 8 | Jargon words | Words | Empty | Near-copy of report |
 |---|---|---|---|---|---|---|---|
@@ -46,12 +46,12 @@ Flesch-Kincaid grade (patient material targets about grade 6-8); jargon = share 
 | Zero-shot FLAN-T5 | 13.7 | 12.7 | 11.4% | 11.2% | 19.2 | 5.2% | 64.7% |
 | LoRA fine-tuned | 6.7 | 6.3 | 70.3% | 0.1% | 35.9 | 0.0% | 0.3% |
 | Full fine-tuned | 6.7 | 6.4 | 70.0% | 0.0% | 36.8 | 0.0% | 0.2% |
-| Human reference | 7.0 | 6.7 | 67.5% | 0.1% | 38.7 | 0.0% | 0.2% |
+| Reference (GPT-4o) | 7.0 | 6.7 | 67.5% | 0.1% | 38.7 | 0.0% | 0.2% |
 | Expert report (input) | 13.7 | 12.7 | 8.1% | 13.1% | 23.1 | 0.0% | 100.0% |
 
 ## 3. Clinical-safety audit against the source report
 
-Share of summaries with at least one flag on a critical finding (pneumothorax, pleural_effusion, lung_opacity_infection, cardiomegaly, nodule_mass, fracture, pulmonary_edema), on the 5,505 UNSEEN validation reports; last column: same on the official test reports (all new). The *Human reference* row is the checker's false-alarm floor (human lay writers paraphrase in ways the rules miss, and some references are genuinely incomplete); judge models relative to it.
+Share of summaries with at least one flag on a critical finding (pneumothorax, pleural_effusion, lung_opacity_infection, cardiomegaly, nodule_mass, fracture, pulmonary_edema), on the 5,505 UNSEEN validation reports; last column: same on the official test reports (new report text). The *Reference (GPT-4o)* row is the checker's false-alarm floor (the reference summaries paraphrase in ways the rules miss, and some are genuinely incomplete); judge models relative to it.
 
 | Text | Any flag | Omission | Hallucination | Polarity flip | Certainty upgrade | Certainty downgrade | Left/right swap | False reassurance | Any flag (test) |
 |---|---|---|---|---|---|---|---|---|---|
@@ -60,11 +60,11 @@ Share of summaries with at least one flag on a critical finding (pneumothorax, p
 | Zero-shot FLAN-T5 | 15.9% | 14.4% | 0.8% | 1.4% | 0.2% | 0.0% | 0.0% | 0.3% | 15.5% |
 | LoRA fine-tuned | 19.2% | 11.4% | 4.4% | 2.5% | 1.5% | 1.0% | 0.1% | 0.1% | 19.6% |
 | Full fine-tuned | 20.1% | 11.7% | 4.5% | 3.0% | 1.3% | 0.9% | 0.2% | 0.2% | 20.2% |
-| Human reference | 22.3% | 12.9% | 5.8% | 3.3% | 1.3% | 1.1% | 0.1% | 0.2% | n/a |
+| Reference (GPT-4o) | 22.3% | 12.9% | 5.8% | 3.3% | 1.3% | 1.1% | 0.1% | 0.2% | n/a |
 
 ## 4. Confidence and guardrails (validation)
 
-Error label (offline audit): the summary disagrees with the human reference on whether a critical finding is present. *Auto-approved* = released to the patient without review; *errors caught* = share of all errors routed to a human; *residual error* = error rate among auto-approved summaries.
+Error label (offline audit): the summary disagrees with the reference summary on whether a critical finding is present. *Auto-approved* = released to the patient without review; *errors caught* = share of all errors routed to a clinician; *residual error* = error rate among auto-approved summaries.
 
 | System | Policy | Auto-approved | Errors caught | Residual error |
 |---|---|---|---|---|
@@ -93,6 +93,6 @@ Inference uses greedy decoding; batched = batches of 64 reports sorted by length
 
 | System | Parameters | Trainable | Train time (min) | Peak train VRAM (MB) | Train tokens/s | Checkpoint (MB) | ms/report (batched) | ms/report (single) | Generated tokens/s | Peak inference VRAM (MB) |
 |---|---|---|---|---|---|---|---|---|---|---|
-| Zero-shot FLAN-T5 | 247,577,856 | 0 (no training) | - | - | - | - | 75.3 | 1252 | 635 | 2792 |
-| LoRA fine-tuned | 249,347,328 | 1,769,472 | 36.2 | 13589 | 22645 | 6.8 | 63.0 | 1571 | 846 | 2802 |
-| Full fine-tuned | 247,577,856 | 247,577,856 | 40.6 | 17252 | 23800 | 1132.8 | 50.7 | 1240 | 1066 | 3098 |
+| Zero-shot FLAN-T5 | 247,577,856 | 0 (no training) | - | - | - | - | 81.3 | 1286 | 589 | 2792 |
+| LoRA fine-tuned | 249,347,328 | 1,769,472 | 36.2 | 13589 | 22645 | 6.8 | 63.1 | 1583 | 845 | 2802 |
+| Full fine-tuned | 247,577,856 | 247,577,856 | 40.6 | 17252 | 23800 | 1132.8 | 51.4 | 1255 | 1053 | 3098 |
