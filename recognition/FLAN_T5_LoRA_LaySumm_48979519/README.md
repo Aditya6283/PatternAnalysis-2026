@@ -1,6 +1,27 @@
-# Plain-Language Radiology Reports with FLAN-T5: LoRA vs. Full Fine-Tuning
+<div align="center">
 
-**Aditya Raj Singh (48979519)**, COMP3710 Pattern Analysis 2026, Project 2.6: Radiology Report Summarisation (Hard difficulty, T5 / FLAN-T5)
+# Plain-Language Radiology Reports with FLAN-T5
+
+### LoRA vs. Full Fine-Tuning for Patient-Friendly Chest X-ray Reports
+
+<br>
+
+**Aditya Raj Singh**<br>
+Student ID: 48979519<br>
+COMP3710 Pattern Analysis, 2026<br>
+Project 2.6: Radiology Report Summarisation (Hard difficulty, T5 / FLAN-T5)
+
+<br>
+
+![Python 3.11](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)
+![PyTorch 2.13](https://img.shields.io/badge/PyTorch-2.13-EE4C2C?logo=pytorch&logoColor=white)
+![Model: FLAN-T5-base](https://img.shields.io/badge/model-FLAN--T5--base-F59E0B)
+![Data: BioLaySumm 2025](https://img.shields.io/badge/data-BioLaySumm%202025-2563EB)
+![Difficulty: Hard](https://img.shields.io/badge/difficulty-Hard-DC2626)
+
+</div>
+
+---
 
 Radiology reports are written for doctors ("Small left pleural effusion. No pneumothorax."), but patients now read them in online portals and are often left confused or worried. This project teaches **FLAN-T5-base** [2], an instruction-tuned encoder-decoder Transformer [1, 3], to rewrite chest X-ray reports in plain, patient-friendly language ("There is a small amount of fluid around the left lung. There is no collapsed lung."). It uses the BioLaySumm 2025 LaymanRRG data: about 150,000 expert reports, each paired with a lay version written by GPT-4o [8, 15]. Two ways of adapting the 248M-parameter model are compared. **Full fine-tuning** trains every weight. **LoRA** [4] freezes the model and learns two small low-rank matrices beside chosen layers, so only 1.77M parameters (0.71%) are trained. Both are measured against three baselines: the same model with no training (**zero-shot**), **copying the report** unchanged, and **retrieving** the lay summary of the most similar training report. A summary can score well on ROUGE while dropping or inventing a finding, so every summary is also checked for clinical errors (omitted, invented or negated findings, changed certainty, false reassurance), for readability, and for whether the model's confidence predicts its mistakes. Together these answer the task's question: *does fine-tuning keep the clinical facts right, or does it only make the text sound better?*
 
@@ -64,6 +85,7 @@ The zero-shot flag rate only looks low because 64.7% of its outputs are near-cop
   - [7.7 Failure case autopsy](#77-failure-case-autopsy)
   - [7.8 Recommendation to the project manager](#78-recommendation-to-the-project-manager)
 - [8. Limitations](#8-limitations)
+- [9. Artificial Intelligence Usage Disclosure](#9-artificial-intelligence-usage-disclosure)
 - [References](#references)
 
 ---
@@ -522,6 +544,37 @@ The overall pattern: the fine-tuned models fail where the training data is thin 
 - **Greedy decoding** without repetition control causes the loops in case 2. Beam search or `no_repeat_ngram_size` might also raise ROUGE, but every system would have to be generated again.
 - **No clinical review.** The autopsy cases and the 20 flag verdicts were judged by a non-clinician, and how well patients understand the summaries was not measured.
 - **Scope.** English chest X-ray reports only (PadChest and BIMCV were translated from Spanish), text only, and one dataset. Latency was measured with unmerged LoRA adapters and includes the confidence pass.
+
+---
+
+## 9. Artificial Intelligence Usage Disclosure
+**Tools used:** Claude Code, Anthropic's AI coding assistant, in the terminal and in VS Code.
+
+**What AI helped with**
+- **Code:** Took help from Claude Code to write the code in this folder from my instructions (the model, data pipeline, training, prediction, evaluation and safety-checker files, the unit tests and the Slurm scripts) and changed it when I asked, for example adding the held-out test step in `train.py`, the example figure in `predict.py` and the X-ray study check in `dataset.py`.
+- **Debugging:** I traced the errors from the Rangpur logs and took help for fixing them, such as the Slurm scripts passing job options to conda and two bugs in how the safety checker read negations.
+- **Analysis:** helping me read the results, picking and measuring the failure cases in Section 7.7, the manual check of 20 safety flags, and comparing this project with other 2026 pull requests, which led to the X-ray study check.
+- **Writing:** drafting the feasibility review from my Rangpur feasibility results, this README and checking them against the brief.
+- **Rangpur and Git:** the commands I ran on Rangpur, suggestions for how to split the work into commits.
+- **Learning:** explaining LoRA, ROUGE, the safety checks and each figure to me in plain language.
+
+**My part.** I chose the project and decided what to build, what to change and what went into the submission. I presented the feasibility review at the check-off, ran every job on Rangpur myself (feasibility, both training runs, evaluation and prediction) and went through the logs and outputs with Claude Code. I read and reviewed every file before submitting.
+
+**How the AI-generated work was checked**
+- **Unit tests:** 33 tests on a tiny random T5 cover the places where a silent bug would change the results. They check that LoRA starts exactly at the pre-trained model and merges back exactly, that only the adapters train, that padding never counts in the loss, that dev and train share no report text, that the confidence score matches the decoder's own probabilities, and that 17 hand-written safety cases get the expected flags. The tests were run on Rangpur and on my laptop.
+- **Real runs:** every job ran on the real data on Rangpur, and its log and outputs were checked before the next step. When a job failed, the error was traced from the log, reproduced and fixed.
+- **Re-runs:** after the checker fix, the whole evaluation was run again on the same saved summaries. The Rangpur re-run matched a local re-scoring, and every flag rate moved by at most 0.1 percentage points.
+- **Leakage:** an assertion stops training if any report text appears in both train and dev, and the overlap with the official splits was measured by text and by X-ray study, which is why results are also given for unseen and clean reports.
+- **The checker itself:** 20 random flags were read against their reports (`results/flag_audit.csv`). Most were false alarms or vague wording, so the flag rates are only read relative to the reference summaries.
+- **The README:** it was compared with the brief and the code section by section, every number was checked against `results/summary.md` and `results/metrics.json`, and a script checked that every link, image and reference works.
+
+**Mistakes these checks caught**
+- Earlier drafts described the reference summaries as written by people. The dataset paper shows that GPT-4o wrote them, so every comparison was relabelled and the silver-label limitation was added.
+- The checker read "not visualized" as a positive finding (caught in testing) and "cannot exclude X" as "no X" (caught in a code review). Both were fixed and are covered by regression tests.
+- The Slurm scripts passed a job's own options to conda, which broke any job started with options. This showed up when a test job failed on Rangpur.
+- A few numbers in earlier drafts were wrong and were corrected against the results: the repetition loops caused by placeholders (10 of 13, not 11), the near-copy rate on long reports (1.0%), and the training time, which is now the measured time instead of an estimate.
+
+I am responsible for every line of code and every claim in this report.
 
 ---
 
