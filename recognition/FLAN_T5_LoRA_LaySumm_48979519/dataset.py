@@ -14,7 +14,9 @@ How the splits are used (no patient ids are provided, so identical report TEXT i
 unit of leakage, and the X-ray study from images_path is checked as well):
     train       official train, exact duplicate (report, lay) pairs removed;
     dev         ~1,000 rows carved out of train for early stopping / model selection,
-                grouped by normalised report text so no report string is in both;
+                grouped by normalised report text AND X-ray study, so no report string and
+                no examination is in both (the runs reported in the README used the earlier
+                text-only grouping, which `--dev-group text` reproduces);
     validation  official validation, held out and used ONCE for the final benchmark
                 (the task sheet evaluates on it because test labels are hidden). Each row
                 is marked `seen_in_train` if its normalised report text also occurs in the
@@ -96,16 +98,59 @@ def study_key(df: pd.DataFrame) -> pd.Series:
 # ---------------------------------------------------------------------------
 # Splits
 # ---------------------------------------------------------------------------
-def group_dev_split(train: pd.DataFrame, dev_size: int, seed: int,
-                    max_group: int = 50) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """Hold out whole groups of identical (normalised) reports until ~dev_size rows.
+DEV_GROUPINGS = ("text+study", "text")
 
-    Grouping guarantees no report text appears in both train and dev (the text
-    analogue of a patient-level split). Very common boiler-plate reports (> max_group
-    rows, e.g. 'No significant findings.') stay in training so one string cannot fill
-    the dev set.
+
+def linked_groups(*key_columns: Sequence[str]) -> List[int]:
+    """Group id per row, where rows that share a value in ANY key column are in one group.
+
+    Union-find over the rows: two rows that share a report text are joined, two rows from the
+    same X-ray study are joined, and the joins chain (A shares a text with B, B shares a study
+    with C, so A, B and C form one group). The id is the group's smallest row index, so it is
+    deterministic for a given row order.
     """
+    n = len(key_columns[0])
+    parent = list(range(n))
+
+    def find(i: int) -> int:
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]          # path halving keeps the trees shallow
+            i = parent[i]
+        return i
+
+    for keys in key_columns:
+        first_row = {}
+        for i, k in enumerate(keys):
+            if k in first_row:
+                a, b = find(i), find(first_row[k])
+                if a != b:
+                    parent[max(a, b)] = min(a, b)  # the smaller index stays the root
+            else:
+                first_row[k] = i
+    return [find(i) for i in range(n)]
+
+
+def group_dev_split(train: pd.DataFrame, dev_size: int, seed: int, max_group: int = 50,
+                    group_by: str = "text+study") -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Hold out whole groups of rows until ~dev_size rows.
+
+    group_by="text+study" (default): a group is every row linked to another by the same
+    normalised report text or the same X-ray study (`linked_groups`), so no report text and
+    no examination appears in both train and dev. Added after the code review: with the text
+    grouping alone, 175 of the 1,000 dev rows (all PadChest) shared an examination with a
+    training row through a differently worded report.
+    group_by="text": groups of identical normalised reports only. This is the split the runs
+    in the README were trained with, and it is kept so they can be reproduced exactly.
+
+    Either way it stands in for a patient-level split, which needs patient ids the data does not
+    have. Very large groups (> max_group rows, e.g. the boiler-plate 'No significant findings.')
+    stay in training so one group cannot fill the dev set.
+    """
+    if group_by not in DEV_GROUPINGS:
+        raise ValueError(f"group_by must be one of {DEV_GROUPINGS}, not {group_by!r}")
     keys = train["radiology_report"].map(normalise_report)
+    if group_by == "text+study":
+        keys = pd.Series(linked_groups(keys.tolist(), study_key(train).tolist()), index=train.index)
     counts = keys.value_counts()
     candidates = sorted(k for k, c in counts.items() if c <= max_group)
     random.Random(seed).shuffle(candidates)
@@ -121,10 +166,10 @@ def group_dev_split(train: pd.DataFrame, dev_size: int, seed: int,
 
 def prepare_splits(data_dir: str = DEFAULT_DATA_DIR, dev_size: int = 1000, seed: int = 42,
                    dedup: bool = True, max_train: Optional[int] = None,
-                   verbose: bool = True) -> Dict[str, pd.DataFrame]:
+                   verbose: bool = True, dev_group: str = "text+study") -> Dict[str, pd.DataFrame]:
     """Return {'train', 'dev', 'validation', 'test'} DataFrames (see module docstring).
 
-    Deterministic for a given (dev_size, seed, dedup, max_train), so train.py and
+    Deterministic for a given (dev_size, seed, dedup, max_train, dev_group), so train.py and
     evaluate.py rebuild exactly the same training set when marking `seen_in_train`.
     """
     train = read_split(data_dir, "train")
@@ -134,7 +179,7 @@ def prepare_splits(data_dir: str = DEFAULT_DATA_DIR, dev_size: int = 1000, seed:
     if dedup:
         train = train.drop_duplicates(list(TEXT_COLUMNS)).reset_index(drop=True)
     n_dedup = len(train)
-    train, dev = group_dev_split(train, dev_size, seed)
+    train, dev = group_dev_split(train, dev_size, seed, group_by=dev_group)
     if max_train and max_train < len(train):
         train = train.sample(n=max_train, random_state=seed).reset_index(drop=True)
 
@@ -142,14 +187,17 @@ def prepare_splits(data_dir: str = DEFAULT_DATA_DIR, dev_size: int = 1000, seed:
     dev_keys = set(dev["radiology_report"].map(normalise_report))
     assert not (train_keys & dev_keys), "a report text appears in both train and dev"
     train_studies = set(study_key(train))
+    if dev_group == "text+study":
+        assert not (train_studies & set(study_key(dev))), "an X-ray study appears in both train and dev"
     for df in (validation, test):
         df["seen_in_train"] = df["radiology_report"].map(normalise_report).isin(train_keys)
         # A stricter test than the text: the same examination may appear with differently worded reports
         df["study_seen_in_train"] = study_key(df).isin(train_studies)
     test["has_reference"] = test["layman_report"].str.len() > 0
     if verbose:
+        grouping = "report text and X-ray study" if dev_group == "text+study" else "report text"
         print(f"[data] train {n_raw} rows -> {n_dedup} after removing duplicate pairs -> "
-              f"{len(train)} train + {len(dev)} dev (grouped by report text)", flush=True)
+              f"{len(train)} train + {len(dev)} dev (grouped by {grouping})", flush=True)
         print(f"[data] validation {len(validation)} rows ({validation['seen_in_train'].mean():.1%} "
               f"of reports and {validation['study_seen_in_train'].mean():.1%} of X-ray studies also in train); "
               f"test {len(test)} rows ({test['seen_in_train'].mean():.1%} / "
@@ -376,8 +424,10 @@ def main() -> None:
     p.add_argument("--data-dir", default=DEFAULT_DATA_DIR)
     p.add_argument("--audit", action="store_true", help="print the data audit table")
     p.add_argument("--model", default=DEFAULT_MODEL, help="tokenizer used for token-length statistics")
+    p.add_argument("--dev-group", choices=DEV_GROUPINGS, default="text+study",
+                   help="how the dev split is grouped (see group_dev_split)")
     args = p.parse_args()
-    splits = prepare_splits(args.data_dir)
+    splits = prepare_splits(args.data_dir, dev_group=args.dev_group)
     if args.audit:
         print(audit_text(args.data_dir, load_tokenizer(args.model)))
     print({k: len(v) for k, v in splits.items()})

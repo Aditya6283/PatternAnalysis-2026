@@ -10,7 +10,8 @@ Usage (from this folder, on a GPU node; data and weights fetched first with down
     torchrun --standalone --nproc_per_node=2 train.py --mode full --out runs/full_ddp   # multi-GPU
 
 What happens:
-  * data: dataset.prepare_splits (dedup, report-grouped dev split); prompts + targets tokenised;
+  * data: dataset.prepare_splits (dedup, dev split grouped by report text and X-ray study);
+    prompts + targets tokenised;
     batches of similar length (less padding);
   * objective: token cross-entropy of the reference lay summary (teacher forcing), bfloat16
     autocast on the GPU, AdamW, linear warm-up then linear decay, gradient clipping at 1.0;
@@ -34,7 +35,7 @@ from collections import defaultdict
 import torch
 import torch.distributed as dist
 
-from dataset import (DEFAULT_DATA_DIR, DEFAULT_MODEL, LaySummDataset, load_tokenizer,
+from dataset import (DEFAULT_DATA_DIR, DEFAULT_MODEL, DEV_GROUPINGS, LaySummDataset, load_tokenizer,
                      make_eval_loader, make_train_loader, prepare_splits)
 from modules import IGNORE_INDEX, LaySummariser, count_parameters
 from utils import (autocast_ctx, get_device, library_versions, peak_memory_mb,
@@ -50,6 +51,9 @@ def parse_args():
     p.add_argument("--out", default=None, help="output folder (default runs/<mode>)")
     # data
     p.add_argument("--dev-size", type=int, default=1000, help="rows held out of train for model selection")
+    p.add_argument("--dev-group", choices=DEV_GROUPINGS, default="text+study",
+                   help="group the dev split by report text and X-ray study (default), or by report "
+                        "text only, which is how the runs in the README were trained")
     p.add_argument("--max-train-samples", type=int, default=None, help="subsample training rows (budget/smoke tests)")
     p.add_argument("--no-dedup", action="store_true", help="keep duplicate (report, lay) pairs")
     p.add_argument("--max-source-len", type=int, default=384)
@@ -182,7 +186,8 @@ def save_checkpoint(path: str, model: LaySummariser, args, **extra) -> None:
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
     payload = {"config": model.config, "mode": model.mode, "state_dict": model.trainable_state_dict(),
                "train_args": vars(args),
-               "data": {"dev_size": args.dev_size, "seed": args.seed, "dedup": not args.no_dedup,
+               "data": {"dev_size": args.dev_size, "dev_group": args.dev_group, "seed": args.seed,
+                        "dedup": not args.no_dedup,
                         "max_train": args.max_train_samples}, **extra}
     tmp = path + ".tmp"
     torch.save(payload, tmp)
@@ -204,7 +209,8 @@ def main():
               f"bf16={amp} lr={args.lr}", flush=True)
 
     splits = prepare_splits(args.data_dir, dev_size=args.dev_size, seed=args.seed,
-                            dedup=not args.no_dedup, max_train=args.max_train_samples, verbose=is_main)
+                            dedup=not args.no_dedup, max_train=args.max_train_samples, verbose=is_main,
+                            dev_group=args.dev_group)
     tokenizer = load_tokenizer(args.model)
     train_ds = LaySummDataset(splits["train"], tokenizer, args.max_source_len, args.max_target_len)
     dev_ds = LaySummDataset(splits["dev"], tokenizer, args.max_source_len, args.max_target_len)

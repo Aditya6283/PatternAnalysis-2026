@@ -182,12 +182,35 @@ def test_dev_split_shares_no_report_text_with_train():
               [f"nodule number {i}" for i in range(40)]              # same text, different format
     df = pd.DataFrame({"uid": range(len(reports)), "radiology_report": reports,
                        "layman_report": ["x"] * len(reports)})
-    train, dev = group_dev_split(df, dev_size=20, seed=0, max_group=50)
+    train, dev = group_dev_split(df, dev_size=20, seed=0, max_group=50, group_by="text")
     tk = set(train["radiology_report"].map(normalise_report))
     dk = set(dev["radiology_report"].map(normalise_report))
     assert not (tk & dk) and len(dev) >= 20
     assert "no significant findings" in tk                          # boiler-plate stays in training
     assert normalise_report("No  significant findings.") == "no significant findings"
+
+
+def test_dev_split_keeps_each_examination_on_one_side():
+    # Each examination i has two images with differently worded reports, and the second wording
+    # also appears in a different examination: text, study and text again link all three rows.
+    rows = []
+    for i in range(30):
+        rows += [("PadChest", f"{1000 + i}_00-1-1.png", f"Nodule in the left lung, case {i}."),
+                 ("PadChest", f"{1000 + i}_00-1-2.png", f"Left lung nodule, case {i}."),
+                 ("PadChest", f"{5000 + i}_00-1-1.png", f"Left lung nodule, case {i}.")]
+    df = pd.DataFrame(rows, columns=["source", "images_path", "radiology_report"])
+    df["uid"], df["layman_report"] = range(len(df)), "x"
+
+    def shared(train, dev):
+        texts = [set(d["radiology_report"].map(normalise_report)) for d in (train, dev)]
+        return texts[0] & texts[1], set(study_key(train)) & set(study_key(dev))
+
+    train, dev = group_dev_split(df, dev_size=10, seed=0)                    # default: text + study
+    assert shared(train, dev) == (set(), set()) and len(dev) >= 10
+    assert len(dev) % 3 == 0                                                  # whole linked groups of 3 rows
+    train, dev = group_dev_split(df, dev_size=10, seed=0, group_by="text")   # the earlier split
+    texts, studies = shared(train, dev)
+    assert not texts and studies           # text grouping alone splits an examination across train and dev
 
 
 def test_study_key_groups_the_images_of_one_examination():

@@ -55,7 +55,8 @@ import torch
 
 import matplotlib.pyplot as plt
 
-from dataset import DEFAULT_DATA_DIR, DEFAULT_MODEL, load_tokenizer, normalise_report, prepare_splits
+from dataset import (DEFAULT_DATA_DIR, DEFAULT_MODEL, DEV_GROUPINGS, load_tokenizer, normalise_report,
+                     prepare_splits)
 from modules import LaySummariser, count_parameters, load_summariser
 from safety import (CRITICAL, FLAG_TYPES, build_jargon_vocabulary, compare, disagrees, fkgl,
                     jargon_rate, words)
@@ -79,6 +80,7 @@ def parse_args():
     p.add_argument("--main", default=None, help="system used for the autopsy (default: LoRA, else Full)")
     p.add_argument("--data-dir", default=DEFAULT_DATA_DIR)
     p.add_argument("--dev-size", type=int, default=1000, help="must match training")
+    p.add_argument("--dev-group", choices=DEV_GROUPINGS, default="text+study", help="must match training")
     p.add_argument("--seed", type=int, default=42, help="must match training")
     p.add_argument("--max-train-samples", type=int, default=None, help="must match training")
     p.add_argument("--no-dedup", action="store_true", help="must match training")
@@ -226,7 +228,8 @@ def main():
     report, metrics = [], {}
 
     splits = prepare_splits(args.data_dir, dev_size=args.dev_size, seed=args.seed,
-                            dedup=not args.no_dedup, max_train=args.max_train_samples)
+                            dedup=not args.no_dedup, max_train=args.max_train_samples,
+                            dev_group=args.dev_group)
     train, val, test = splits["train"], splits["validation"], splits["test"]
     if args.val_limit and args.val_limit < len(val):
         val = val.sample(n=args.val_limit, random_state=0).reset_index(drop=True)
@@ -284,10 +287,13 @@ def main():
             model, ckpt = load_summariser(spec["path"], device)
             model_name = ckpt["config"]["model_name"]
             data = ckpt.get("data") or {}
-            if data and (data.get("dev_size"), data.get("seed"), data.get("max_train")) != \
-                    (args.dev_size, args.seed, args.max_train_samples):
+            # checkpoints saved before the code review have no "dev_group": they used the text grouping
+            if data and (data.get("dev_size"), data.get("dev_group", "text"), data.get("seed"),
+                         data.get("max_train")) != (args.dev_size, args.dev_group, args.seed,
+                                                    args.max_train_samples):
                 print(f"[eval] WARNING: {name} was trained with data settings {data}; pass the same "
-                      "--dev-size/--seed/--max-train-samples so 'seen' marks the right reports", flush=True)
+                      "--dev-size/--dev-group/--seed/--max-train-samples so 'seen' marks the right "
+                      "reports", flush=True)
             # LoRA checkpoints hold only the adapters; full ones every weight (all of them trained).
             ckpt_info[name] = {"parameters_trainable": sum(v.numel() for v in ckpt["state_dict"].values())
                                if ckpt["mode"] == "lora" else count_parameters(model)[0],
